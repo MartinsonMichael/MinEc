@@ -1,0 +1,33 @@
+{% load static %}
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+</head>
+<body>
+
+
+<button type="button" class="btn btn-default js-add-filter-page">
+          <span class="glyphicon glyphicon-plus"></span>
+    <a> Add Filter </a>
+</button>
+
+
+{% load filter_block %}
+{% block filter_block %}
+{% endblock %}
+
+{% load table_block %}
+{% block table_block %}
+{% endblock %}
+
+<script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+<script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
+</body>
+</html>
