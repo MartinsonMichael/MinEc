@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 
 minec_back/buffer/*
+MinEc_prod/*
 
 # C extensions
 *.so
