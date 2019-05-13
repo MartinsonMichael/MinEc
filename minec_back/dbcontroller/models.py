@@ -26,6 +26,7 @@ def fill_ASK_DICT():
     global ASK_DICT
     ASK_DICT = dict()
     fill_ASK_DICT_with_model(Company)
+    fill_ASK_DICT_with_model(TaxBase)
 
     print(ASK_DICT)
 
@@ -41,7 +42,7 @@ def fill_ASK_DICT_with_model(model):
             name = model.__name__ + '__' + name
 
         ASK_DICT[name] = {
-            'human': field.verbose_name,
+            'human': field.verbose_name[:40],
             'machine': field.name,
             'suggestions': [],
         }
@@ -55,10 +56,14 @@ def fill_ASK_DICT_with_model(model):
                 ],
             })
 
-        if isinstance(field, models.IntegerField):
+        if isinstance(field, models.IntegerField) or isinstance(field, models.FloatField):
             ASK_DICT[name].update({
-                'type': 'int',
-                'options': [],
+                'type': 'number',
+            })
+
+        if isinstance(field, models.DateField):
+            ASK_DICT[name].update({
+                'type': 'date',
             })
 
 

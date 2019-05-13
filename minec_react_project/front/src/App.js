@@ -36,8 +36,10 @@ class FilterField extends Component{
       let data = this.state.data;
       data.property = event.target.value;
       if (this.props.ask_dict[data.property].suggestions.length > 0){
-          data.value = Array(1);
-          data.value[0] = this.props.ask_dict[data.property].suggestions[0];
+        data.value = [].concat(this.props.ask_dict[data.property].suggestions[0]);
+      }
+      if (this.props.ask_dict[data.property].type === 'date' || this.props.ask_dict[data.property].type === 'number'){
+          data.value = "";
       }
       this.setState({data : data});
       this.handleFilterChange();
@@ -76,18 +78,22 @@ class FilterField extends Component{
 
 
   validateDate(event){
-     event.target.value.replace(' ', '');
+     let str = event.target.value;
+     //str = str.replace(' ', '');
      this.setState({error : 'None'});
-     if (!event.target.value.match(/^\d{2}\-\d{2}\-\d{4}$/)){
-        this.setState({error : "date must be 'XX-XX-XXXX'"})
+     if (!str.match(/^\d{2}\.\d{2}\.\d{4}(\-\d{2}\.\d{2}\.\d{4})?$/)){
+        this.setState({error :
+                "date must be a single date 'DD.MM.YYYY' or a " +
+                "range DD.MM.YYYY-DD.MM.YYYY"})
      }
 
   }
 
   validateNumberString(event){
-     event.target.value.replace(' ', '');
+     let str = event.target.value;
+     //str = str.replace('( )', '');
      this.setState({error : 'None'});
-     if (!event.target.value.match(/^(\d+,|\d+\-\d+,)*(\d+|\d+\-\d+)$/)){
+     if (!str.match(/^(\d+(\.\d+)?,|\d+(\.\d+)?\-\d+(\.\d+)?,)*(\d+(\.\d+)?|\d+(\.\d+)?\-\d+(\.\d+)?)$/)){
          this.setState({error :
                  "number string should consist of numbers and ranges" +
                  " separated by comma, like '12,23-34,234,250-800'"})
@@ -130,7 +136,7 @@ class FilterField extends Component{
                 />
 
             ) : (<a></a>)}
-            {this.props.ask_dict[this.state.data.property].type == 'int' ? (
+            {this.props.ask_dict[this.state.data.property].type === 'number' ? (
                 <input
                     type="text"
                     value={this.state.data.value}
@@ -138,7 +144,7 @@ class FilterField extends Component{
                     onBlur={this.validateNumberString}
                 />
             ) : (<a></a>)}
-            {this.props.ask_dict[this.state.data.property].type == 'date' ? (
+            {this.props.ask_dict[this.state.data.property].type === 'date' ? (
                 <input
                     type="text"
                     value={this.state.data.value}
@@ -147,7 +153,7 @@ class FilterField extends Component{
                 />
             ) : (<a></a>)}
         </label>
-          {this.state.error == 'None' ? (<a></a>) : (
+          {this.state.error === 'None' ? (<a></a>) : (
               <label>
                   {this.state.error}
               </label>
