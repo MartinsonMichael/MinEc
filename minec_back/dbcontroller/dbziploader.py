@@ -191,8 +191,8 @@ def addToDB(page_type, steps=None):
     dirname = os.path.join(BUFFER_DIR, page_type['url_name'])
     filename = os.path.join(BUFFER_DIR, page_type['url_name'] + '_data.zip')
 
-    loadNewData(page_type['url_name'], filename)
-    extractToDir(filename, dirname)
+    #loadNewData(page_type['url_name'], filename)
+    #extractToDir(filename, dirname)
 
     for i, xmlfile in enumerate(os.listdir(dirname)):
         print(f'{i}/{len(os.listdir(dirname))}')
@@ -206,9 +206,9 @@ def test():
     print('global start...')
     print(os.path.abspath(os.path.curdir))
 
-    addToDB(PAGE_TYPES[0], 10)
+    #addToDB(PAGE_TYPES[0], 10)
 
-    addToDB(PAGE_TYPES[3], 10)
+    addToDB(PAGE_TYPES[3])
 
     # # addToDB(PAGE_TYPES[0])
     print('finish')

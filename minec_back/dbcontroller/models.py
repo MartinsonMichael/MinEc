@@ -20,6 +20,48 @@ LOCATION_TYPES ={
     'станция'
 }
 
+ASK_DICT = None
+
+def fill_ASK_DICT():
+    global ASK_DICT
+    ASK_DICT = dict()
+    fill_ASK_DICT_with_model(Company)
+
+    print(ASK_DICT)
+
+
+def fill_ASK_DICT_with_model(model):
+    global ASK_DICT
+    for field in model._meta.get_fields():
+        if isinstance(field, models.OneToOneRel):
+            continue
+
+        name = field.name
+        if model.__name__ != 'Company':
+            name = model.__name__ + '__' + name
+
+        ASK_DICT[name] = {
+            'human': field.verbose_name,
+            'machine': field.name,
+            'suggestions': [],
+        }
+
+        if isinstance(field, models.BooleanField):
+            ASK_DICT[name].update({
+                'type': 'bool',
+                'suggestions': [
+                    {'id': 1, 'name': 'True'},
+                    {'id': 2, 'name': 'False'}
+                ],
+            })
+
+        if isinstance(field, models.IntegerField):
+            ASK_DICT[name].update({
+                'type': 'int',
+                'options': [],
+            })
+
+
 
 class Company(models.Model):
     # primary key
@@ -28,19 +70,19 @@ class Company(models.Model):
     # main fields
     date_create = models.DateField("дата создания компании", null=True)
     still_alive = models.BooleanField("еще существует?", null=False, default=True)
-    is_ip = models.BooleanField("ИП", null=True)
+    is_ip = models.BooleanField("является ИП", null=True)
 
     # location
     location_code = models.IntegerField("код региона", null=True)
 
 
 class EmployeeNum(models.Model):
-    inn = models.ForeignKey(Company, on_delete=models.CASCADE)
+    inn = models.OneToOneField(Company, on_delete=models.CASCADE)
     employee_num = models.IntegerField("количество работников", null=True)
 
 
 class CompanyLocation(models.Model):
-    inn = models.ForeignKey(Company, on_delete=models.CASCADE)
+    inn = models.OneToOneField(Company, on_delete=models.CASCADE)
 
 
 for hname in LOCATION_TYPES:
@@ -79,12 +121,9 @@ TAX_TYPES = {
 
 
 class TaxBase(models.Model):
-    inn = models.ForeignKey(Company, on_delete=models.CASCADE)
+    inn = models.OneToOneField(Company, on_delete=models.CASCADE)
     date_fns = models.DateField('время добавления ФНСом', null=True)
 
 
 for hname, pyname in TAX_TYPES.items():
     TaxBase.add_to_class(pyname, models.FloatField(name=hname, default=0))
-
-
-Company.objects.filter()

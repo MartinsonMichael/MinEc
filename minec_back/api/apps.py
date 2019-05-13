@@ -4,9 +4,29 @@ import json
 from dbcontroller.models import Company
 from django.core import serializers
 
-
 class ApiConfig(AppConfig):
     name = 'api'
+
+
+def get_template_HTTP_RESPONSE():
+    resp = HttpResponse()
+    resp["Access-Control-Allow-Origin"] = '*'
+    return resp
+
+
+def get_ask_dict(request):
+
+    # DEBUG
+    #if ASK_DICT is None:
+    from dbcontroller.models import fill_ASK_DICT
+    fill_ASK_DICT()
+    from dbcontroller.models import ASK_DICT
+
+    resp = get_template_HTTP_RESPONSE()
+    resp.content = json.dumps({
+        'ask_dict': ASK_DICT,
+    })
+    return resp
 
 
 def process_filters(options, q):
@@ -28,8 +48,7 @@ def process_options(options):
 
 
 def perform_api(request):
-    resp = HttpResponse()
-    resp["Access-Control-Allow-Origin"] = '*'
+    resp = get_template_HTTP_RESPONSE()
     options = dict(request.GET)
     print(options)
 
