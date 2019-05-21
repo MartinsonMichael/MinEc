@@ -15,7 +15,7 @@ class FilterField extends Component{
     };
     this.state.data = {
             property: this.state.pos_prop[0],
-            sign: "eq",
+            sign: this.props.ask_dict[this.state.pos_prop[0]].sign,
             value: "",
         };
 
@@ -24,18 +24,29 @@ class FilterField extends Component{
     this.handleChangeValue = this.handleChangeValue.bind(this);
     this.validateDate = this.validateDate.bind(this);
     this.validateNumberString = this.validateNumberString.bind(this);
+    this.delItem = this.delItem.bind(this);
+
+    this.changeAfterProperty();
+    this.handleFilterChange();
   }
 
-  handleChangeProperty(event){
+  changeAfterProperty(){
       let data = this.state.data;
-      data.property = event.target.value;
       if (this.props.ask_dict[data.property].suggestions.length > 0){
         data.value = [].concat(this.props.ask_dict[data.property].suggestions[0]);
       }
       if (this.props.ask_dict[data.property].type === 'date' || this.props.ask_dict[data.property].type === 'number'){
           data.value = "";
       }
+      data.sign = this.props.ask_dict[this.state.data.property].sign[0].value;
       this.setState({data : data});
+  }
+
+  handleChangeProperty(event){
+      let data = this.state.data;
+      data.property = event.target.value;
+      this.setState({data : data});
+      this.changeAfterProperty();
       this.handleFilterChange();
   }
 
@@ -75,10 +86,10 @@ class FilterField extends Component{
      let str = event.target.value;
      //str = str.replace(' ', '');
      this.setState({error : 'None'});
-     if (!str.match(/^\d{2}\.\d{2}\.\d{4}(-\d{2}\.\d{2}\.\d{4})?$/)){
+     if (!str.match(/^\d{2}\.\d{2}\.\d{4}(-\d{2}\.\d{2}\.\d{4})?(,\d{2}\.\d{2}\.\d{4}(-\d{2}\.\d{2}\.\d{4})?)*$/)){
         this.setState({error :
-                "date must be a single date 'DD.MM.YYYY' or a " +
-                "range DD.MM.YYYY-DD.MM.YYYY"})
+                "date must be set of a single date 'DD.MM.YYYY' or a " +
+                "range DD.MM.YYYY-DD.MM.YYYY, separated by comma without spaces"})
      }
 
   }
@@ -94,9 +105,22 @@ class FilterField extends Component{
      }
   }
 
+  delItem(){
+     let data = this.state.data;
+     data.property = '---';
+     this.setState({data : data});
+     this.handleFilterChange();
+  }
+
   render() {
+     if (this.state.data.property === '---'){
+         return (<a></a>)
+     }
     return(
       <div className="row">
+          <button onClick={() => this.delItem()}>
+              X
+          </button>
         <select
             value={this.state.data.property}
             onSelect={this.handleChangeProperty}
@@ -114,11 +138,12 @@ class FilterField extends Component{
             onSelect={this.handleChangeSign}
             onChange={this.handleChangeSign}
         >
-          <option value="lt"> {"<"} </option>
-          <option value="gt"> {">"} </option>
-          <option value="eq"> {"="} </option>
-          <option value="gte"> {">="} </option>
-          <option value="lte"> {"<="} </option>
+          {this.props.ask_dict[this.state.data.property].sign.map((item) => (
+                    <option value={item.value}>
+                        {item.name}
+                    </option>
+
+            ))}
         </select>
         <label>
             {this.props.ask_dict[this.state.data.property].suggestions.length > 0 ? (
@@ -188,8 +213,6 @@ export class FilterController extends Component{
   render() {
     return(
       <div>
-        <div className="state">{this.state.app_state} </div>
-
         {
           this.state.filters.map((component, index) => (
               <FilterField
@@ -202,8 +225,6 @@ export class FilterController extends Component{
               </FilterField>
           ))
         }
-
-
         <button
             className="add_filter_button"
             onClick={() => this.addFilter()}

@@ -5,10 +5,14 @@ import requests
 import zipfile
 import maya
 import traceback
-from tqdm import tqdm
-from dbcontroller.models import TaxBase, Company
+from dbcontroller.models import TaxBase, Company, Alive, EmployeeNum
+from datetime import datetime
+from django.db.models.functions import Extract
+from django.db import transaction
 
 BUFFER_DIR = './buffer/'
+ASK_DICT = None
+TAX_DICT = None
 
 
 def loadNewData(name, filename):
@@ -38,6 +42,8 @@ def parseCompany(filename):
     print(f'start parse xml company {filename}')
     soup = BeautifulSoup(open(filename, 'r').read(), 'xml')
     buffer = []
+    alive_create = []
+    alive_update = []
     for item in soup.find_all('Документ'):
         try:
 
@@ -62,17 +68,22 @@ def parseCompany(filename):
                 date_create=maya.parse(item['ДатаВклМСП']).datetime(),
             )
 
-            #location_code = item.find('СведМН')
             company.location_code = item.find('СведМН')['КодРегион']
-            # for loc_type in location_code:
-            #     setattr(
-            #         company,
-            #         str.lower(loc_type['Тип']),
-            #         str.lower(loc_type['Наим'])
-            #     )
 
-            #company.save()
-            buffer.append(company)
+            if Company.objects.filter(inn=inn).count() == 0:
+                alive = Alive(
+                    inn=company,
+                    date_created=datetime.now().date(),
+                    date_disappear=None,
+                    still_alive=True,
+                    still_not_found=False,
+                    life_duration_years=0,
+                )
+                alive_create.append(alive)
+                buffer.append(company)
+            else:
+                alive_update.append(inn)
+
         except:
             print('Error while parsing:')
             print(item.prettify())
@@ -80,8 +91,13 @@ def parseCompany(filename):
             traceback.print_exc()
             print('\n***\n')
             break
+    if len(buffer) > 0:
+        Company.objects.bulk_create(buffer)
+        Alive.objects.bulk_create(alive_create)
+    if len(alive_update) > 0:
+        print('Alive update :', len(alive_update))
+        Alive.objects.filter(inn__inn__in=alive_update).update(still_not_found=False)
 
-    Company.objects.bulk_create(buffer)
 
 def parseNumEmployees(filename):
     print(f'start parse xml employee numbers {filename}')
@@ -89,23 +105,33 @@ def parseNumEmployees(filename):
 
     cnt = 0
     pss = 0
-    for item in soup.find_all('Документ'):
-        cnt += 1
-        try:
-            inn = int(item.find('СведНП')['ИННЮЛ'])
-            employee_num = int(item.find('СведССЧР')['КолРаб'])
-            company = Company.objects.get(pk=inn)
-            company.employee_num = employee_num
-            company.save()
-        except Company.DoesNotExist:
-            pss += 1
-        except:
-            print('Error while parsing:')
-            print(item.prettify())
-            print('\n***\nEroor:\n')
-            traceback.print_exc()
-            print('\n***\n')
-            break
+    with transaction.atomic():
+        for item in soup.find_all('Документ'):
+            cnt += 1
+            try:
+                inn = int(item.find('СведНП')['ИННЮЛ'])
+                employee_num = int(item.find('СведССЧР')['КолРаб'])
+
+                employee_num_obj = None
+                if EmployeeNum.objects.filter(inn=inn).count() == 0:
+                    company = Company.objects.get(inn=inn)
+                    employee_num_obj = EmployeeNum(
+                        inn=company,
+                    )
+                else:
+                    employee_num_obj = EmployeeNum.objects.get(inn=inn)
+                employee_num_obj.employee_num = employee_num
+                employee_num_obj.save()
+
+            except Company.DoesNotExist:
+                pss += 1
+            except:
+                print('Error while parsing:')
+                print(item.prettify())
+                print('\n***\nEroor:\n')
+                traceback.print_exc()
+                print('\n***\n')
+                break
 
     print(f'pass rate : {pss} / {cnt}')
 
@@ -114,45 +140,52 @@ def parseTax(filename):
     print(f'start parse xml tex {filename}')
     soup = BeautifulSoup(open(filename, 'r').read(), 'xml')
 
-    buffer = []
     pss = 0
     cnt = 0
-    for item in soup.find_all('Документ'):
-        try:
-            main_part = item.find('СведНП')
+    with transaction.atomic():
+        for item in soup.find_all('Документ'):
+            try:
+                cnt += 1
+                main_part = item.find('СведНП')
 
-            inn = None
+                inn = None
 
-            if main_part.has_attr('ИННФЛ'):
-                inn = main_part['ИННФЛ']
+                if main_part.has_attr('ИННФЛ'):
+                    inn = main_part['ИННФЛ']
 
-            if main_part.has_attr('ИННЮЛ'):
-                inn = main_part['ИННЮЛ']
+                if main_part.has_attr('ИННЮЛ'):
+                    inn = main_part['ИННЮЛ']
 
-            if inn is None:
-                continue
+                if inn is None:
+                    continue
 
-            company = Company.objects.get(pk=inn)
 
-            tax_item = TaxBase(
-                inn=company,
-            )
+                tax_item = None
+                if TaxBase.objects.filter(inn=inn).count() == 0:
+                    company = Company.objects.get(pk=inn)
 
-            for tax in item.find_all('СвУплСумНал'):
-                setattr(tax_item, tax['НаимНалог'], tax['СумУплНал'])
+                    tax_item = TaxBase(
+                        inn=company,
+                    )
+                else:
+                    tax_item = TaxBase.objects.get(inn=inn)
 
-            buffer.append(tax_item)
-            cnt += 1
-        except Company.DoesNotExist:
-            pss += 1
-        except:
-            print('Error while parsing:')
-            print(item.prettify())
-            print('\n***\nEroor:\n')
-            traceback.print_exc()
-            print('\n***\n')
-            break
-    TaxBase.objects.bulk_create(buffer)
+                for tax in item.find_all('СвУплСумНал'):
+                    setattr(tax_item, TAX_DICT[tax['НаимНалог']], tax['СумУплНал'])
+
+                #buffer.append(tax_item)
+                tax_item.save()
+
+            except Company.DoesNotExist:
+                pss += 1
+            except:
+                print('Error while parsing:')
+                print(item.prettify())
+                print('\n***\nEroor:\n')
+                traceback.print_exc()
+                print('\n***\n')
+                break
+    # TaxBase.objects.bulk_create(buffer)
     print(f'pass rate : {pss} / {cnt}')
 
 
@@ -183,7 +216,15 @@ PAGE_TYPES = [
 ]
 
 
-def addToDB(page_type, steps=None):
+def addToDB(page_type, steps=None, need_load=None, need_unzip=None):
+    global ASK_DICT, TAX_DICT
+    if ASK_DICT is None:
+        from .models import create_ASK_DICT
+        ASK_DICT = create_ASK_DICT()
+    if TAX_DICT is None:
+        from .models import create_TAX_DICT
+        TAX_DICT = create_TAX_DICT()
+
     print('start updating', page_type['name'])
     if not os.path.exists(BUFFER_DIR):
         os.makedirs(BUFFER_DIR)
@@ -191,28 +232,52 @@ def addToDB(page_type, steps=None):
     dirname = os.path.join(BUFFER_DIR, page_type['url_name'])
     filename = os.path.join(BUFFER_DIR, page_type['url_name'] + '_data.zip')
 
-    #loadNewData(page_type['url_name'], filename)
-    #extractToDir(filename, dirname)
+    if need_load is None or need_load:
+        loadNewData(page_type['url_name'], filename)
 
-    for i, xmlfile in enumerate(os.listdir(dirname)):
+    if need_unzip is None or need_unzip:
+        extractToDir(filename, dirname)
+
+    for i, xml_file in enumerate(os.listdir(dirname)):
         print(f'{i}/{len(os.listdir(dirname))}')
-        page_type['parse_func'](os.path.join(dirname, xmlfile))
+        page_type['parse_func'](os.path.join(dirname, xml_file))
         if steps is not None and i > steps:
             break
 
 
+def fill():
+    print('FILL : global start...')
+
+    Alive.objects.filter(still_alive=True).update(still_not_found=True)
+    addToDB(PAGE_TYPES[0])
+    Alive.objects.filter(still_not_found=True).update(
+        date_disappear=datetime.now().date(),
+        life_duration_years=datetime.now().date().year - Extract('date_created', 'year'),
+        still_alive=False,
+    )
+    Alive.objects.filter(still_alive=True).update(
+        life_duration_years=datetime.now().date().year - Extract('date_created', 'year'),
+    )
+    Alive.objects.filter(still_alive=False).update(still_not_found=False)
+
+    print('FILL : finish')
+
 
 def test():
     print('global start...')
-    print(os.path.abspath(os.path.curdir))
+    # Alive.objects.filter(still_alive=True).update(still_not_found=True)
+    # addToDB(PAGE_TYPES[0], 10, need_load=False, need_unzip=False)
+    # Alive.objects.filter(still_not_found=True).update(
+    #     date_disappear=datetime.now().date(),
+    #     life_duration_years=datetime.now().date().year - Extract('date_created', 'year'),
+    #     still_alive=False,
+    # )
+    # Alive.objects.filter(still_alive=True).update(
+    #     life_duration_years=datetime.now().date().year - Extract('date_created', 'year'),
+    # )
+    # Alive.objects.filter(still_alive=False).update(still_not_found=False)
 
-    #addToDB(PAGE_TYPES[0], 10)
+    addToDB(PAGE_TYPES[1], 100, need_load=True, need_unzip=True)
 
-    addToDB(PAGE_TYPES[3])
-
-    # # addToDB(PAGE_TYPES[0])
+    # addToDB(PAGE_TYPES[3], 100, need_load=False, need_unzip=False)
     print('finish')
-
-
-if __name__ == "__main__":
-    test()

@@ -9,6 +9,8 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 
 import { FilterController } from './filters';
+import { AgregatorContorll } from './agregators';
+import { GroupbyContorll } from './groupper';
 
 
 class Main extends Component {
@@ -16,12 +18,8 @@ class Main extends Component {
   constructor(props){
       super(props);
       this.state = {
-          control_filter: FilterController,
           data: Array(3),
-
-          table_header: Array(0),
-          table_body: Array(0),
-          table_pk: 'pk',
+          app_state: 'Ожидание запроса',
       };
   }
 
@@ -34,26 +32,58 @@ class Main extends Component {
   onLoadQuery(response){
     console.log(response);
     this.setState({
-        table_header : response.data.table_header,
+        table_header : JSON.parse(response.data.table_header),
+        table_human_header : JSON.parse(response.data.table_human_header),
         table_body : JSON.parse(response.data.table_body),
-        table_pk : response.data.table_pk,
+        table_error : JSON.parse(response.data.table_error),
+        app_state: 'Запрос получен. Ожидание нового запроса'
     });
+
+    if (this.state.table_error.length > 0){
+        this.setState({app_state : 'Запрос завершен с ошибками'})
+    }
   }
 
   makeParamsForQuery(){
     // 0 - filters
+      let spase = '___';
       let params = {};
-      for (let i = 0; i < this.state.data[0].length; i++){
-          params['filter_' + i] =
-              this.state.data[0][i].property + "__" +
-              this.state.data[0][i].sign;
-          if (Array.isArray(this.state.data[0][i].value)) {
-              for (let temp = 0; temp < this.state.data[0][i].value.length; temp++){
-                  params['filter_' + i] += '__' + this.state.data[0][i].value[temp].name;
+      if (Array.isArray(this.state.data[0])) {
+          for (let i = 0; i < this.state.data[0].length; i++) {
+              if (this.state.data[0][i].property === '---'){
+                  continue;
+              }
+              params['filter_' + i] =
+                  this.state.data[0][i].property + spase +
+                  this.state.data[0][i].sign + spase;
+              if (Array.isArray(this.state.data[0][i].value)) {
+                  for (let temp = 0; temp < this.state.data[0][i].value.length; temp++) {
+                      params['filter_' + i] += this.state.data[0][i].value[temp].name + spase;
+                  }
+              } else {
+                  params['filter_' + i] += this.state.data[0][i].value + spase;
               }
           }
-          else{
-                params['filter_' + i] += '__' + this.state.data[0][i].value;
+      }
+      // 1 - grouppers
+      if (Array.isArray(this.state.data[1])) {
+          for (let i = 0; i < this.state.data[1].length; i++) {
+              if (this.state.data[1][i].property === '---'){
+                  continue;
+              }
+              params['groupby_' + i] =
+                  this.state.data[1][i].property;
+          }
+      }
+      // 2 - aggregations
+      if (Array.isArray(this.state.data[2])) {
+          for (let i = 0; i < this.state.data[2].length; i++) {
+              if (this.state.data[2][i].property === '---'){
+                  continue;
+              }
+              params['aggregate_' + i] =
+                  this.state.data[2][i].sign + spase +
+                  this.state.data[2][i].property;
           }
       }
 
@@ -61,6 +91,7 @@ class Main extends Component {
   }
 
   getQuery(){
+      this.setState({app_state : 'Запрос отправлен'});
       let params = this.makeParamsForQuery();
       this.setState({buf : params});
       axios.get(
@@ -76,10 +107,13 @@ class Main extends Component {
   render() {
     return (
         <div className="Main">
+            <label>
+                {this.state.app_state}
+            </label>
           <div className="Controllers">
-            <FilterController onNewData={this.handleChildChange} ask_dict={this.props.ask_dict}>
-                {this.state.control_filter}
-            </FilterController>
+            <FilterController onNewData={this.handleChildChange} ask_dict={this.props.ask_dict}/>
+            <GroupbyContorll onNewData={this.handleChildChange} ask_dict={this.props.ask_dict}/>
+            <AgregatorContorll onNewData={this.handleChildChange} ask_dict={this.props.ask_dict}/>
           </div>
           <button
               className="make_query"
@@ -87,14 +121,64 @@ class Main extends Component {
           >
             Сформировать таблицу
           </button>
-          <MyTable
-              pk={this.state.table_pk}
-              header={this.state.table_header}
-              table={this.state.table_body}
+            {Array.isArray(this.state.table_error) && this.state.table_error.length > 0 ? (
+                <div>
+                    {
+                        this.state.table_error.map( (item) =>
+                            <label>
+                                {item}
+                            </label>
+                        )
+                    }
+                </div>
+            ) : (<a></a>)
+            }
+
+
+          <MyTable2
+              table_human_header={this.state.table_human_header}
+              table_header={this.state.table_header}
+              table_body={this.state.table_body}
           />
         </div>
     );
   }
+}
+
+class MyTable2 extends Component{
+    render() {
+        if (!Array.isArray(this.props.table_header)) {
+            return (<a/>)
+        }
+
+        return (
+            <Table>
+                <TableHead>
+                    <TableRow>
+                        {
+                            this.props.table_human_header.map((head_name) =>
+                                <TableCell>{head_name}</TableCell>
+                            )
+                        }
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {
+                        this.props.table_body.map((row) =>
+                            <TableRow>
+                                {
+                                    this.props.table_header.map((head_name) =>
+                                        <TableCell>{row[head_name]}</TableCell>
+                                    )
+                                }
+                            </TableRow>
+
+                        )
+                    }
+                </TableBody>
+            </Table>
+        );
+    }
 }
 
 class MyTable extends Component{
