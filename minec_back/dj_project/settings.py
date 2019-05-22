@@ -25,15 +25,15 @@ SECRET_KEY = 'cxomuf+nu9l+eyx73cc_!69$-_$#)!cklq@ut(($cq28fc473m'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['0.0.0.0', 'localhost']
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'rest_framework',
-    'django_filters',
-    'django_tables2',
+    # 'rest_framework',
+    # 'django_filters',
+    # 'django_tables2',
     'dbcontroller',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'MinEcProject.apps.MinecprojectConfig',
+    # 'MinEcProject.apps.MinecprojectConfig',
 ]
 
 MIDDLEWARE = [

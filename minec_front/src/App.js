@@ -95,7 +95,7 @@ class Main extends Component {
       let params = this.makeParamsForQuery();
       this.setState({buf : params});
       axios.get(
-          'http://127.0.0.1:8000/api/get', {
+          'http://0.0.0.0:/api/get', {
               params: params,
           })
           .then((res) => this.onLoadQuery(res))
@@ -235,7 +235,7 @@ class App extends Component {
 
     componentWillMount() {
         axios.get(
-          'http://127.0.0.1:8000/api/get_ask_dict', {
+          'http://0.0.0.0:/api/get_ask_dict', {
           })
           .then((res) => this.on_ASK_DICT_load(res))
           .catch(function (error) {

@@ -1,7 +1,9 @@
-# Byte-compiled / optimized / DLL files
+# Byte-compi:led / optimized / DLL files
 __pycache__/
 *.py[cod]
 
+./minec_back/db.sqlite3
+minec_back/db.sqlite3
 minec_back/buffer/*
 MinEc_prod/*
 

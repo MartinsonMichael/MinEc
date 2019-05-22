@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+
+  nginx:
+    build:
+      context: ./minec_front/
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - ./minec_front/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
+    command: ["nginx", "-g", "daemon off;"]
+
+  backend:
+    container_name: backend
+    build:
+      context: ./minec_back/
+      dockerfile: Dockerfile
+    expose:
+      - "8000"
+    volumes:
+      - ./minec_back:/backend
