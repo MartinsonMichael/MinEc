@@ -21,92 +21,11 @@ LOCATION_TYPES ={
 }
 TECH_FILED = "technical filed"
 
-
-def create_ASK_DICT():
-    ASK_DICT = dict()
-    fill_ASK_DICT_with_model(Company, ASK_DICT)
-    fill_ASK_DICT_with_model(Alive, ASK_DICT)
-    fill_ASK_DICT_with_model(TaxBase, ASK_DICT)
-    fill_ASK_DICT_with_model(EmployeeNum, ASK_DICT)
-
-    print(ASK_DICT.keys())
-    return ASK_DICT
-
-
-def create_TAX_DICT():
-    TAX_DICT = dict()
-    for i, field in enumerate(TaxBase._meta.get_fields()):
-        TAX_DICT[field.verbose_name] = field.name
-    return TAX_DICT
-
-
-def fill_ASK_DICT_with_model(model, ASK_DICT):
-    for i, field in enumerate(model._meta.get_fields()):
-        if isinstance(field, models.OneToOneRel):
-            continue
-
-        if field.name.lower() == 'id':
-            continue
-
-        if field.name.lower() == 'inn' and not model.__name__ == 'Company':
-            continue
-
-        if field.verbose_name.startswith(TECH_FILED):
-            continue
-
-        name = field.name
-        if model.__name__ != 'Company':
-            name = model.__name__ + '__' + name
-        name = name.lower()
-
-        ASK_DICT[name] = {
-            'human': field.verbose_name[:50],
-            'machine': name,
-            'sign': [{'value': 'none', 'name': '---'}],
-            'suggestions': [],
-        }
-
-        if isinstance(field, models.BooleanField):
-            ASK_DICT[name].update({
-                'type': 'multi',
-                'sign': [{'value': 'range', 'name': 'одно из'}],
-                'suggestions': [
-                    {'id': 1, 'name': 'True'},
-                    {'id': 2, 'name': 'False'}
-                ],
-            })
-
-        if isinstance(field, models.IntegerField) or isinstance(field, models.FloatField):
-            ASK_DICT[name].update({
-                'type': 'number',
-                'sign': [
-                    {'value': 'range', 'name': 'одно из'},
-                    {'value': 'gt', 'name': '>'},
-                    {'value': 'lt', 'name': '<'},
-                    {'value': 'gte', 'name': '>='},
-                    {'value': 'lte', 'name': '<='},
-                ],
-            })
-
-        if isinstance(field, models.DateField):
-            ASK_DICT[name].update({
-                'type': 'date',
-                'sign': [
-                    {'value': 'range', 'name': 'одно из'},
-                    {'value': 'gt', 'name': '>'},
-                    {'value': 'lt', 'name': '<'},
-                    {'value': 'gte', 'name': '>='},
-                    {'value': 'lte', 'name': '<='},
-                ],
-            })
-
-
 class Company(models.Model):
     # primary key
     inn = models.IntegerField("ИНН", primary_key=True)
 
     # main fields
-    date_create = models.DateField("дата создания компании", null=True)
     is_ip = models.BooleanField("является ИП", null=True)
 
     # location
@@ -115,7 +34,8 @@ class Company(models.Model):
 
 class Alive(models.Model):
     inn = models.OneToOneField(Company, on_delete=models.CASCADE)
-    date_created = models.DateField("дата добавления в базу", null=False)
+    date_create = models.DateField("дата создания компании", null=True)
+    date_add_to_base = models.DateField("дата добавления в базу", null=False)
     date_disappear = models.DateField("дата прекращения существования", null=True)
     still_alive = models.BooleanField("еще существует?", null=False, default=True)
     life_duration_years = models.IntegerField("продолжительность существования (лет)", null=False)
@@ -175,3 +95,9 @@ class TaxBase(models.Model):
         verbose_name='Страховые взносы на обязательное социальное страхование на случай'
                      ' временной нетрудоспособности и в связи с материнством',
         default=0)
+
+
+class BaseIncome(models.Model):
+    inn = models.OneToOneField(Company, on_delete=models.CASCADE)
+    income = models.FloatField('доход')
+    outcome = models.FloatField('расход')

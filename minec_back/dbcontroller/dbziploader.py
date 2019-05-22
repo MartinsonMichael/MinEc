@@ -5,10 +5,12 @@ import requests
 import zipfile
 import maya
 import traceback
-from dbcontroller.models import TaxBase, Company, Alive, EmployeeNum
+from dbcontroller.models import TaxBase, Company, Alive, EmployeeNum, BaseIncome
 from datetime import datetime
 from django.db.models.functions import Extract
 from django.db import transaction
+from concurrent.futures import ThreadPoolExecutor
+from time import sleep
 
 BUFFER_DIR = './buffer/'
 ASK_DICT = None
@@ -41,62 +43,61 @@ def extractToDir(filename, dirname):
 def parseCompany(filename):
     print(f'start parse xml company {filename}')
     soup = BeautifulSoup(open(filename, 'r').read(), 'xml')
-    buffer = []
-    alive_create = []
-    alive_update = []
-    for item in soup.find_all('Документ'):
-        try:
+    with transaction.atomic():
+        for item in soup.find_all('Документ'):
+            try:
 
-            main_part = item.find('ИПВклМСП')
-            if main_part is None:
-                main_part = item.find('ОргВклМСП')
+                main_part = item.find('ИПВклМСП')
+                if main_part is None:
+                    main_part = item.find('ОргВклМСП')
 
-            inn = None
-            is_ip = None
+                inn = None
+                is_ip = None
 
-            if main_part.has_attr('ИННФЛ'):
-                inn = main_part['ИННФЛ']
-                is_ip = True
+                if main_part.has_attr('ИННФЛ'):
+                    inn = main_part['ИННФЛ']
+                    is_ip = True
 
-            if main_part.has_attr('ИННЮЛ'):
-                inn = main_part['ИННЮЛ']
-                is_ip = False
+                if main_part.has_attr('ИННЮЛ'):
+                    inn = main_part['ИННЮЛ']
+                    is_ip = False
 
-            company = Company(
-                inn=inn,
-                is_ip=is_ip,
-                date_create=maya.parse(item['ДатаВклМСП']).datetime(),
-            )
+                if Company.objects.filter(inn=inn).count() == 0:
+                    company = Company(inn=inn)
+                    alive = Alive(
+                        inn=company,
+                        date_add_to_base=datetime.now().date(),
+                        date_create=datetime.now().date(),
+                        date_disappear=None,
+                        still_alive=True,
+                        still_not_found=False,
+                        life_duration_years=0,
+                    )
+                else:
+                    company = Company.objects.get(inn=inn)
+                    alive = Alive.objects.get(inn=inn)
 
-            company.location_code = item.find('СведМН')['КодРегион']
+                company.is_ip = is_ip
+                company.location_code = item.find('СведМН')['КодРегион']
+                company.save()
 
-            if Company.objects.filter(inn=inn).count() == 0:
-                alive = Alive(
-                    inn=company,
-                    date_created=datetime.now().date(),
-                    date_disappear=None,
-                    still_alive=True,
-                    still_not_found=False,
-                    life_duration_years=0,
-                )
-                alive_create.append(alive)
-                buffer.append(company)
-            else:
-                alive_update.append(inn)
+                alive.date_create = maya.parse(item['ДатаВклМСП']).datetime()
+                alive.still_not_found = False
+                alive.save()
 
-        except:
-            print('Error while parsing:')
-            print(item.prettify())
-            print('\n***\nEroor:\n')
-            traceback.print_exc()
-            print('\n***\n')
-            break
-    if len(buffer) > 0:
-        Company.objects.bulk_create(buffer)
-        Alive.objects.bulk_create(alive_create)
-    if len(alive_update) > 0:
-        print('Alive update :', len(alive_update))
-        Alive.objects.filter(inn__inn__in=alive_update).update(still_not_found=False)
+            except:
+                print('Error while parsing:')
+                print(item.prettify())
+                print('\n***\nEroor:\n')
+                traceback.print_exc()
+                print('\n***\n')
+                break
+    # if len(buffer) > 0:
+    #     Company.objects.bulk_create(buffer)
+    #     Alive.objects.bulk_create(alive_create)
+    # if len(alive_update) > 0:
+    #     print('Alive update :', len(alive_update))
+    #     Alive.objects.filter(inn__inn__in=alive_update).update(still_not_found=False)
 
 
 def parseNumEmployees(filename):
@@ -189,6 +190,56 @@ def parseTax(filename):
     print(f'pass rate : {pss} / {cnt}')
 
 
+def parseBuhUschet(filename):
+    print(f'start parse xml income {filename}')
+    soup = BeautifulSoup(open(filename, 'r').read(), 'xml')
+
+    pss = 0
+    cnt = 0
+    with transaction.atomic():
+        for item in soup.find_all('Документ'):
+            try:
+                cnt += 1
+                main_part = item.find('СведНП')
+
+                inn = None
+
+                if main_part.has_attr('ИННФЛ'):
+                    inn = main_part['ИННФЛ']
+
+                if main_part.has_attr('ИННЮЛ'):
+                    inn = main_part['ИННЮЛ']
+
+                if inn is None:
+                    continue
+
+                income_item = None
+                if BaseIncome.objects.filter(inn=inn).count() == 0:
+                    company = Company.objects.get(pk=inn)
+                    income_item = BaseIncome(
+                        inn=company,
+                    )
+                else:
+                    income_item = BaseIncome.objects.get(inn=inn)
+
+                item = item.find('СведДохРасх')
+                income_item.income = item['СумДоход']
+                income_item.outcome = item['СумРасход']
+
+                income_item.save()
+
+            except Company.DoesNotExist:
+                pss += 1
+            except:
+                print('Error while parsing:')
+                print(item.prettify())
+                print('\n***\nEroor:\n')
+                traceback.print_exc()
+                print('\n***\n')
+                break
+    print(f'pass rate : {pss} / {cnt}')
+
+
 PAGE_TYPES = [
     {
         'name': 'Единый реестр субъектов малого и среднего предпринимательства',
@@ -206,7 +257,7 @@ PAGE_TYPES = [
                 ' (финансовой) отчетности организации за год, предшествующий '
                 'году размещения таких сведений на сайте ФНС России',
         'url_name': '7707329152-revexp',
-        'parse_func': None,
+        'parse_func': parseBuhUschet,
     },
     {
         'name': 'НАЛОГИ',
@@ -219,10 +270,10 @@ PAGE_TYPES = [
 def addToDB(page_type, steps=None, need_load=None, need_unzip=None):
     global ASK_DICT, TAX_DICT
     if ASK_DICT is None:
-        from .models import create_ASK_DICT
+        from .model_support import create_ASK_DICT
         ASK_DICT = create_ASK_DICT()
     if TAX_DICT is None:
-        from .models import create_TAX_DICT
+        from .model_support import create_TAX_DICT
         TAX_DICT = create_TAX_DICT()
 
     print('start updating', page_type['name'])
@@ -245,9 +296,7 @@ def addToDB(page_type, steps=None, need_load=None, need_unzip=None):
             break
 
 
-def fill():
-    print('FILL : global start...')
-
+def run_fill_asyn():
     Alive.objects.filter(still_alive=True).update(still_not_found=True)
     addToDB(PAGE_TYPES[0])
     Alive.objects.filter(still_not_found=True).update(
@@ -259,25 +308,73 @@ def fill():
         life_duration_years=datetime.now().date().year - Extract('date_created', 'year'),
     )
     Alive.objects.filter(still_alive=False).update(still_not_found=False)
+    pool = ThreadPoolExecutor(4)
+    feat = dict()
+    for x in range(1, len(PAGE_TYPES)):
+        feat[x] = pool.submit(addToDB, (PAGE_TYPES[x]))
+
+    for x in range(1, len(PAGE_TYPES)):
+        while(not feat[x].done()):
+            sleep(5)
+
+
+
+def fill():
+    print('FILL : global start...')
+
+    Alive.objects.filter(still_alive=True).update(still_not_found=True)
+    addToDB(PAGE_TYPES[0])
+    Alive.objects.filter(still_not_found=True).update(
+        date_disappear=datetime.now().date(),
+        life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
+        still_alive=False,
+    )
+    Alive.objects.filter(still_alive=True).update(
+        life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
+    )
+    Alive.objects.filter(still_alive=False).update(still_not_found=False)
+    addToDB(PAGE_TYPES[1])
+    addToDB(PAGE_TYPES[2])
+    addToDB(PAGE_TYPES[3])
 
     print('FILL : finish')
 
 
 def test():
-    print('global start...')
+
     # Alive.objects.filter(still_alive=True).update(still_not_found=True)
-    # addToDB(PAGE_TYPES[0], 10, need_load=False, need_unzip=False)
+    # addToDB(PAGE_TYPES[0], steps=30, need_load=False, need_unzip=False)
     # Alive.objects.filter(still_not_found=True).update(
     #     date_disappear=datetime.now().date(),
-    #     life_duration_years=datetime.now().date().year - Extract('date_created', 'year'),
+    #     life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
     #     still_alive=False,
     # )
     # Alive.objects.filter(still_alive=True).update(
-    #     life_duration_years=datetime.now().date().year - Extract('date_created', 'year'),
+    #     life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
     # )
     # Alive.objects.filter(still_alive=False).update(still_not_found=False)
+    # pool = ThreadPoolExecutor(4)
+    # feat = dict()
+    # for x in range(1, len(PAGE_TYPES)):
+    #     feat[x] = pool.submit(addToDB, (PAGE_TYPES[x], 30, False, False))
+    #
+    # for x in range(1, len(PAGE_TYPES)):
+    #     while not feat[x].done():
+    #         sleep(5)
 
-    addToDB(PAGE_TYPES[1], 100, need_load=True, need_unzip=True)
-
-    # addToDB(PAGE_TYPES[3], 100, need_load=False, need_unzip=False)
-    print('finish')
+    print('TEST : global start...')
+    Alive.objects.filter(still_alive=True).update(still_not_found=True)
+    addToDB(PAGE_TYPES[0], steps=30, need_load=False, need_unzip=False)
+    Alive.objects.filter(still_not_found=True).update(
+        date_disappear=datetime.now().date(),
+        life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
+        still_alive=False,
+    )
+    Alive.objects.filter(still_alive=True).update(
+        life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
+    )
+    Alive.objects.filter(still_alive=False).update(still_not_found=False)
+    addToDB(PAGE_TYPES[1], steps=30, need_load=False, need_unzip=False)
+    addToDB(PAGE_TYPES[2], steps=30, need_load=False, need_unzip=False)
+    addToDB(PAGE_TYPES[3], steps=30, need_load=False, need_unzip=False)
+    print('TEST : finish')

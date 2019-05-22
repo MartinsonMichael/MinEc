@@ -4,7 +4,7 @@ import json
 from dbcontroller.models import Company
 from django.core import serializers
 from django.db.models import Q
-from dbcontroller.models import create_ASK_DICT
+from dbcontroller.model_support import create_ASK_DICT, create_base_to_fields_dicts
 import datetime
 from django.db.models import Sum, Count, Avg
 
@@ -14,6 +14,7 @@ class ApiConfig(AppConfig):
 
 
 ASK_DICT = None
+b2f, f2b = None, None
 
 def get_template_HTTP_RESPONSE():
     resp = HttpResponse()
@@ -163,7 +164,27 @@ def create_value_list(options, q):
         return q
     if isinstance(q, dict):
         return [q]
-    return list(q)
+
+    print(q)
+
+    for key, value in options.items():
+        if not key.startswith('filter'):
+            print('HERE!')
+            return list(q)
+
+    fields = []
+    tables = []
+    for key, value in options.items():
+        if key.startswith('filter'):
+            tables.append(f2b[value[0].split('___')[0]])
+
+    tables = list(set(tables) - set(['Company']))
+    for table in ['Company'] + tables:
+        fields.extend(b2f[table])
+
+    print('fields we need : ', fields)
+    return q.values(*fields)
+    # return q.values()
 
 
 def create_human_headers(header):
@@ -193,9 +214,12 @@ def create_human_headers(header):
 
 
 def perform_api(request):
-    global ASK_DICT
-    if ASK_DICT is None:
+    global ASK_DICT, b2f, f2b
+    if ASK_DICT is None or b2f is None or f2b is None:
         ASK_DICT = create_ASK_DICT()
+        b2f, f2b = create_base_to_fields_dicts()
+
+
     resp = get_template_HTTP_RESPONSE()
     options = dict(request.GET)
     print(options)
