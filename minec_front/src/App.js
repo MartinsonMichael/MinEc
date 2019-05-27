@@ -12,7 +12,6 @@ import { FilterController } from './filters';
 import { AgregatorContorll } from './agregators';
 import { GroupbyContorll } from './groupper';
 
-
 class Main extends Component {
 
   constructor(props){
@@ -173,43 +172,6 @@ class MyTable2 extends Component{
                                 }
                             </TableRow>
 
-                        )
-                    }
-                </TableBody>
-            </Table>
-        );
-    }
-}
-
-class MyTable extends Component{
-    render() {
-        return (
-            <Table>
-                <TableHead>
-                    <TableRow>
-                        <TableCell>
-                            {this.props.pk}
-                        </TableCell>
-                        {
-                            this.props.header.map((head_name) =>
-                                <TableCell>{head_name}</TableCell>
-                            )
-                        }
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {
-                        this.props.table.map((row) =>
-                            <TableRow>
-                                <TableCell>
-                                    {row['pk']}
-                                </TableCell>
-                                {
-                                    this.props.header.map((head_name) =>
-                                        <TableCell>{row['fields'][head_name]}</TableCell>
-                                    )
-                                }
-                            </TableRow>
                         )
                     }
                 </TableBody>

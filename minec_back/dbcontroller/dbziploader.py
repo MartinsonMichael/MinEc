@@ -11,6 +11,7 @@ from django.db.models.functions import Extract
 from django.db import transaction
 from concurrent.futures import ThreadPoolExecutor
 from time import sleep
+import threading
 
 BUFFER_DIR = './buffer/'
 ASK_DICT = None
@@ -318,8 +319,12 @@ def run_fill_asyn():
             sleep(5)
 
 
-
 def fill():
+    t = threading.Thread(target=__fill)
+    t.start()
+
+
+def __fill():
     print('FILL : global start...')
 
     Alive.objects.filter(still_alive=True).update(still_not_found=True)
@@ -341,26 +346,11 @@ def fill():
 
 
 def test():
+    t = threading.Thread(target=__test)
+    t.start()
 
-    # Alive.objects.filter(still_alive=True).update(still_not_found=True)
-    # addToDB(PAGE_TYPES[0], steps=30, need_load=False, need_unzip=False)
-    # Alive.objects.filter(still_not_found=True).update(
-    #     date_disappear=datetime.now().date(),
-    #     life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
-    #     still_alive=False,
-    # )
-    # Alive.objects.filter(still_alive=True).update(
-    #     life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
-    # )
-    # Alive.objects.filter(still_alive=False).update(still_not_found=False)
-    # pool = ThreadPoolExecutor(4)
-    # feat = dict()
-    # for x in range(1, len(PAGE_TYPES)):
-    #     feat[x] = pool.submit(addToDB, (PAGE_TYPES[x], 30, False, False))
-    #
-    # for x in range(1, len(PAGE_TYPES)):
-    #     while not feat[x].done():
-    #         sleep(5)
+
+def __test():
 
     print('TEST : global start...')
     Alive.objects.filter(still_alive=True).update(still_not_found=True)
@@ -378,3 +368,27 @@ def test():
     addToDB(PAGE_TYPES[2], steps=30, need_load=False, need_unzip=False)
     addToDB(PAGE_TYPES[3], steps=30, need_load=False, need_unzip=False)
     print('TEST : finish')
+
+
+def test_with_load():
+    t = threading.Thread(target=__test_with_load)
+    t.start()
+
+
+def __test_with_load():
+    print('TEST with load : global start...')
+    Alive.objects.filter(still_alive=True).update(still_not_found=True)
+    addToDB(PAGE_TYPES[0], steps=30, need_load=True, need_unzip=True)
+    Alive.objects.filter(still_not_found=True).update(
+        date_disappear=datetime.now().date(),
+        life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
+        still_alive=False,
+    )
+    Alive.objects.filter(still_alive=True).update(
+        life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
+    )
+    Alive.objects.filter(still_alive=False).update(still_not_found=False)
+    addToDB(PAGE_TYPES[1], steps=30, need_load=True, need_unzip=True)
+    addToDB(PAGE_TYPES[2], steps=30, need_load=True, need_unzip=True)
+    addToDB(PAGE_TYPES[3], steps=30, need_load=True, need_unzip=True)
+    print('TEST with load : finish')

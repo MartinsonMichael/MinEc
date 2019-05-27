@@ -1,6 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, HttpResponse, HttpResponseRedirect
 from dbcontroller.models import Company
 import dbcontroller.dbziploader as dbc
+
 
 def index(request, **kwargs):
     cnt = Company.objects.all().count()
@@ -8,10 +9,14 @@ def index(request, **kwargs):
     if func is not None:
         if func == 'test':
             dbc.test()
+        if func == 'fill':
+            dbc.fill()
+        if func == 'test_with_load':
+            dbc.test_with_load()
 
-
+        return HttpResponseRedirect('/api/control/')
 
     return render(request, 'control.html', {
         'cnt': cnt,
-        'func': func
+        'func': "None",
     })
