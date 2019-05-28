@@ -38,6 +38,9 @@ class FilterField extends Component{
       if (this.props.ask_dict[data.property].type === 'date' || this.props.ask_dict[data.property].type === 'number'){
           data.value = "";
       }
+      if (this.props.ask_dict[data.property].type === 'bool'){
+          data.value = "True";
+      }
       data.sign = this.props.ask_dict[this.state.data.property].sign[0].value;
       this.setState({data : data});
   }
@@ -146,6 +149,16 @@ class FilterField extends Component{
             ))}
         </select>
         <label>
+            {this.props.ask_dict[this.state.data.property].type === 'bool' ? (
+                <select
+                    value={this.state.data.value}
+                    onChange={this.handleChangeValue}
+                    onBlur={this.validateNumberString}
+                >
+                    <option value={"True"}> Да </option>
+                    <option value={"False"}> Нет </option>
+                </select>
+            ) : (<a></a>)}
             {this.props.ask_dict[this.state.data.property].suggestions.length > 0 ? (
                 <ReactTags
                     tags={this.state.data.value}

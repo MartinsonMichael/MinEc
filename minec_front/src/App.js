@@ -145,9 +145,20 @@ class Main extends Component {
 }
 
 class MyTable2 extends Component{
+
+    render_item(item){
+        if (item === true){
+            return (<TableCell> {"True"} </TableCell>)
+        }
+        if (item === false){
+            return (<TableCell> {"False"} </TableCell>)
+        }
+        return (<TableCell> {item} </TableCell>)
+    }
+
     render() {
         if (!Array.isArray(this.props.table_header)) {
-            return (<a/>)
+            return (<a></a>)
         }
 
         return (
@@ -167,7 +178,7 @@ class MyTable2 extends Component{
                             <TableRow>
                                 {
                                     this.props.table_header.map((head_name) =>
-                                        <TableCell>{row[head_name]}</TableCell>
+                                        (this.render_item(row[head_name]))
                                     )
                                 }
                             </TableRow>

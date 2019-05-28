@@ -59,12 +59,8 @@ def fill_ASK_DICT_with_model(model, ASK_DICT):
 
         if isinstance(field, models.BooleanField):
             ASK_DICT[name].update({
-                'type': 'multi',
-                'sign': [{'value': 'range', 'name': 'одно из'}],
-                'suggestions': [
-                    {'id': 1, 'name': 'True'},
-                    {'id': 2, 'name': 'False'}
-                ],
+                'type': 'bool',
+                'sign': [{'value': 'eq', 'name': '='}],
             })
 
         if isinstance(field, models.IntegerField) or isinstance(field, models.FloatField):

@@ -34,9 +34,17 @@ def get_ask_dict(request):
 
 
 def parse_value(value, case):
+    '''
+    :return list of or values
+    '''
     value = value[:-1]
+
+    if case['type'] == 'bool':
+        return [bool(value[0])]
+
     if case['type'] == 'multi':
         return value
+
     if case['type'] == 'number':
         value = value[0].split(',')
         for i in range(len(value)):
@@ -45,6 +53,7 @@ def parse_value(value, case):
             else:
                 value[i] = float(value[i])
         return value
+
     if case['type'] == 'date':
         value = value[0].split(',')
         for i in range(len(value)):
