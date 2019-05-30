@@ -333,20 +333,20 @@ def test():
 def __test():
 
     print('TEST : global start...')
-    # Alive.objects.filter(still_alive=True).update(still_not_found=True)
-    # addToDB(PAGE_TYPES[0], need_load=False, need_unzip=False)
-    # Alive.objects.filter(still_not_found=True).update(
-    #     date_disappear=datetime.now().date(),
-    #     life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
-    #     still_alive=False,
-    # )
-    # Alive.objects.filter(still_alive=True).update(
-    #     life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
-    # )
-    # Alive.objects.filter(still_alive=False).update(still_not_found=False)
+    Alive.objects.filter(still_alive=True).update(still_not_found=True)
+    addToDB(PAGE_TYPES[0], need_load=False, need_unzip=False)
+    Alive.objects.filter(still_not_found=True).update(
+        date_disappear=datetime.now().date(),
+        life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
+        still_alive=False,
+    )
+    Alive.objects.filter(still_alive=True).update(
+        life_duration_years=datetime.now().date().year - Extract('date_create', 'year'),
+    )
+    Alive.objects.filter(still_alive=False).update(still_not_found=False)
     addToDB(PAGE_TYPES[1], need_load=False, need_unzip=False)
-    #addToDB(PAGE_TYPES[2], steps=30, need_load=False, need_unzip=False)
-    #addToDB(PAGE_TYPES[3], steps=30, need_load=False, need_unzip=False)
+    addToDB(PAGE_TYPES[2], steps=30, need_load=False, need_unzip=False)
+    addToDB(PAGE_TYPES[3], steps=30, need_load=False, need_unzip=False)
     print('TEST : finish')
 
 
