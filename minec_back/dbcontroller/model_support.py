@@ -86,3 +86,11 @@ def fill_ASK_DICT_with_model(model, ASK_DICT):
                     {'value': 'lte', 'name': '<='},
                 ],
             })
+
+        if field.choices is not None and len(field.choices) > 0:
+            ASK_DICT[name].update({
+                'type': 'multy',
+                'sign': [{'value': 'range', 'name': 'одно из'}],
+                'suggestions': field.choices,
+            })
+

@@ -12,6 +12,11 @@ import { FilterController } from './filters';
 import { AgregatorContorll } from './agregators';
 import { GroupbyContorll } from './groupper';
 
+
+//const addr = '127.0.0.1:8000';
+const addr = '0.0.0.0';
+
+
 class Main extends Component {
 
   constructor(props){
@@ -19,7 +24,10 @@ class Main extends Component {
       this.state = {
           data: Array(3),
           app_state: 'Ожидание запроса',
+          is_file: false,
       };
+
+      this.onFileLoadSelect = this.onFileLoadSelect.bind(this);
   }
 
   handleChildChange = (index, data) => {
@@ -92,15 +100,36 @@ class Main extends Component {
   getQuery(){
       this.setState({app_state : 'Запрос отправлен'});
       let params = this.makeParamsForQuery();
-      this.setState({buf : params});
-      axios.get(
-          'http://0.0.0.0:/api/get', {
+
+      if (!this.state.is_file) {
+          axios.get(
+              ''.concat('http://', addr, '/api/get'), {
+                  params: params,
+              })
+              .then((res) => this.onLoadQuery(res))
+              .catch(function (error) {
+                  console.log(error);
+              });
+      }
+      else{
+          axios(''.concat('http://', addr, '/api/get/file/'), {
               params: params,
-          })
-          .then((res) => this.onLoadQuery(res))
-          .catch(function (error) {
-              console.log(error);
-          });
+              method: 'GET',
+              responseType: 'blob', // important
+        }).then((response) => {
+          const url = window.URL.createObjectURL(new Blob([response.data]));
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', 'data.csv');
+          document.body.appendChild(link);
+          link.click();
+        });
+      }
+  }
+
+
+  onFileLoadSelect(){
+    this.setState({is_file : !this.state.is_file})
   }
 
   render() {
@@ -108,6 +137,15 @@ class Main extends Component {
         <div className="Main">
             <label>
                 {this.state.app_state}
+            </label>
+            <p/>
+            <label>
+            <input
+                type="checkbox"
+                checked={this.state.is_file}
+                onChange={this.onFileLoadSelect}
+            />
+                Возврящать запрос файлом
             </label>
           <div className="Controllers">
             <FilterController onNewData={this.handleChildChange} ask_dict={this.props.ask_dict}/>
@@ -122,6 +160,7 @@ class Main extends Component {
           </button>
             {Array.isArray(this.state.table_error) && this.state.table_error.length > 0 ? (
                 <div>
+                    <label>Ошибки запроса:</label>
                     {
                         this.state.table_error.map( (item) =>
                             <label>
@@ -208,7 +247,7 @@ class App extends Component {
 
     componentWillMount() {
         axios.get(
-          'http://0.0.0.0:/api/get_ask_dict', {
+            ''.concat('http://', addr,'/api/get_ask_dict'), {
           })
           .then((res) => this.on_ASK_DICT_load(res))
           .catch(function (error) {
