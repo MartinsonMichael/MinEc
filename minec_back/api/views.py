@@ -8,7 +8,8 @@ def index(request, **kwargs):
     cnt = -1
     try:
         cnt = Company.objects.all().count()
-
+    finally:
+        pass
     func = kwargs['func']
     if func is not None:
         if func == 'test':
