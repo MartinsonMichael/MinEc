@@ -4,10 +4,6 @@ __pycache__/
 
 .ipynb_checkpoints/*
 watch.ipynb
-minec_back/db.sqlite3
-*sqlote3*
-./minec_back/db.sqlite3
-minec_back/db.sqlite3
 minec_back/buffer/*
 MinEc_prod/*
 

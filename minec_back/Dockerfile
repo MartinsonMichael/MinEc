@@ -8,6 +8,6 @@ COPY . ./
 EXPOSE 8000
 
 RUN python manage.py makemigrations
-RUn python manage.py migrate
+RUN python manage.py migrate
 
 CMD uwsgi --ini ./uwsgi_conf.ini
