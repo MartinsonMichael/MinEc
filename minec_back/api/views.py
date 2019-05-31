@@ -6,10 +6,6 @@ import dbcontroller.dbziploader as dbc
 def index(request, **kwargs):
     print('request on control')
     cnt = -1
-    try:
-        cnt = Company.objects.all().count()
-    finally:
-        pass
     func = kwargs['func']
     if func is not None:
         if func == 'test':
