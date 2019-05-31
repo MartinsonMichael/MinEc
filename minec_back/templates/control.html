@@ -11,17 +11,17 @@
 
 
 <div>
-    <form action="{% url 'control_index' 'fill' %}" method="get">
+    <form action="{% url 'base_control' 'fill' %}" method="get">
         Зупустить fill
         <input type="submit">
     </form>
 
-    <form action="{% url 'control_index' 'test' %}" method="get">
+    <form action="{% url 'base_control' 'test' %}" method="get">
         Зупустить test
         <input type="submit">
     </form>
 
-    <form action="{% url 'control_index' 'test_with_load' %}" method="get">
+    <form action="{% url 'base_control' 'test_with_load' %}" method="get">
         Зупустить test with load
         <input type="submit">
     </form>
