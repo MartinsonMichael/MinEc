@@ -27,7 +27,7 @@ def loadNewData(name, filename):
     partwithdatalink = str(soup.find(text="Гиперссылка (URL) на набор").parent.parent)
     datalink = BeautifulSoup(partwithdatalink, 'html.parser').find('a').get('href')
 
-    file = open(filename, 'wb')
+    file = open(filename, 'wb', 0o777)
     file.write(
         urllib.request.urlopen(datalink).read()
     )
