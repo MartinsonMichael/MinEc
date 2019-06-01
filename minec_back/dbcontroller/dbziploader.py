@@ -35,7 +35,7 @@ def loadNewData(name, filename):
 
 def extractToDir(filename, dirname):
     if not os.path.exists(dirname):
-        os.makedirs(dirname)
+        os.makedirs(dirname, 777)
     zip_ref = zipfile.ZipFile(filename, 'r')
     zip_ref.extractall(dirname)
     zip_ref.close()
@@ -281,7 +281,7 @@ def addToDB(page_type, steps=None, need_load=None, need_unzip=None):
 
     print('start updating', page_type['name'])
     if not os.path.exists(BUFFER_DIR):
-        os.makedirs(BUFFER_DIR)
+        os.makedirs(BUFFER_DIR, 777)
 
     dirname = os.path.join(BUFFER_DIR, page_type['url_name'])
     filename = os.path.join(BUFFER_DIR, page_type['url_name'] + '_data.zip')

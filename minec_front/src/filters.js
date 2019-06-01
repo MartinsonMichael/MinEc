@@ -153,7 +153,6 @@ class FilterField extends Component{
                 <select
                     value={this.state.data.value}
                     onChange={this.handleChangeValue}
-                    onBlur={this.validateNumberString}
                 >
                     <option value={"True"}> Да </option>
                     <option value={"False"}> Нет </option>
