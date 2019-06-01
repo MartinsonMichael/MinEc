@@ -28,9 +28,9 @@ def loadNewData(name, filename):
     datalink = BeautifulSoup(partwithdatalink, 'html.parser').find('a').get('href')
 
     file = open(filename, 'wb', 0o777)
-    file.write(
-        urllib.request.urlopen(datalink).read()
-    )
+    data = urllib.request.urlopen(datalink)
+    for line in data:
+            file.write(line)
 
 
 def extractToDir(filename, dirname):
@@ -372,3 +372,7 @@ def __test_with_load():
     addToDB(PAGE_TYPES[2], steps=30, need_load=True, need_unzip=True)
     addToDB(PAGE_TYPES[3], steps=30, need_load=True, need_unzip=True)
     print('TEST with load : finish')
+
+
+def foo():
+    addToDB(PAGE_TYPES[0], steps=10)

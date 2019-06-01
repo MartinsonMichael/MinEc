@@ -18,6 +18,8 @@ def index(request, **kwargs):
             dbc.fill()
         if func == 'test_with_load':
             dbc.test_with_load()
+        if func == 'penis':
+            dbc.foo()
 
         return HttpResponseRedirect('/api/control/')
 
