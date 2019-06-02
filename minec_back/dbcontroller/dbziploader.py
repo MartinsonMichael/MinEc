@@ -270,7 +270,7 @@ PAGE_TYPES = [
 ]
 
 
-def addToDB(page_type, steps=None, need_load=None, need_unzip=None):
+def addToDB(page_type, steps=None, skip_steps=None, need_load=None, need_unzip=None):
     global ASK_DICT, TAX_DICT
     if ASK_DICT is None:
         from .model_support import create_ASK_DICT
@@ -293,6 +293,8 @@ def addToDB(page_type, steps=None, need_load=None, need_unzip=None):
         extractToDir(filename, dirname)
 
     for i, xml_file in enumerate(os.listdir(dirname)):
+        if skip_steps is not None and i < skip_steps:
+            continue
         print(f'{i}/{len(os.listdir(dirname))}')
         page_type['parse_func'](os.path.join(dirname, xml_file))
         if steps is not None and i > steps:
