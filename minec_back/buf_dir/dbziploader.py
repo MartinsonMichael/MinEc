@@ -5,25 +5,23 @@ import requests
 import zipfile
 import maya
 import traceback
-from dbcontroller.models import Company, Alive, OKVED, TaxBase, Company, EmployeeNum, BaseIncome
+from dbcontroller.models import TaxBase, Company, Alive, EmployeeNum, BaseIncome
 from datetime import datetime
 from django.db.models.functions import Extract
 from django.db import transaction
 import threading
-import time
-from django.core.cache import cache
 
 BUFFER_DIR = './buffer/'
 ASK_DICT = None
 TAX_DICT = None
-from dbcontroller.models import REGION_TYPES
-
+from .models import REGION_TYPES
 
 def loadNewData(name, filename):
     print('load data...')
     dataname = "www.nalog.ru/opendata/" + name
     html = requests.get("http://" + dataname).text
     soup = BeautifulSoup(html, 'html.parser')
+    #print(soup.prettify())
     partwithdatalink = str(soup.find(text="Гиперссылка (URL) на набор").parent.parent)
     datalink = BeautifulSoup(partwithdatalink, 'html.parser').find('a').get('href')
 
@@ -43,105 +41,64 @@ def extractToDir(filename, dirname):
 
 def parseCompany(filename):
     print(f'start parse xml company {filename}')
-    now_time = time.time()
     soup = BeautifulSoup(open(filename, 'r').read(), 'xml')
-    to_create = {
-        'company': [],
-        'alive': [],
-        'okved': []
-    }
-    for item in soup.find_all('Документ'):
-        try:
+    with transaction.atomic():
+        for item in soup.find_all('Документ'):
+            try:
 
-            if item.find('ИПВклМСП') is not None:
-                main_part = item.find('ИПВклМСП')
-                inn = main_part['ИННФЛ']
-                is_ip = True
-                owner_name = " ".join(main_part.find('ФИОИП').attrs.values())
-                short_title = None
-
-            if item.find('ОргВклМСП') is not None:
-                main_part = item.find('ОргВклМСП')
-                inn = main_part['ИННЮЛ']
-                is_ip = False
-                owner_name = None
-                if main_part.has_attr('НаимОргСокр'):
-                    short_title = main_part['НаимОргСокр']
-                elif main_part.has_attr('НаимОрг'):
-                    short_title = main_part['НаимОрг']
-                else:
+                if item.find('ИПВклМСП') is not None:
+                    main_part = item.find('ИПВклМСП')
+                    inn = main_part['ИННФЛ']
+                    is_ip = True
+                    owner_name = " ".join(main_part.find('ФИОИП').attrs.values())
                     short_title = None
 
-            #cache.set(key=inn, value="upd", nx=True)
+                if item.find('ОргВклМСП') is not None:
+                    main_part = item.find('ОргВклМСП')
+                    inn = main_part['ИННЮЛ']
+                    is_ip = False
+                    owner_name = None
+                    if main_part.has_attr('НаимОргСокр'):
+                        short_title = main_part['НаимОргСокр']
+                    elif main_part.has_attr('НаимОрг'):
+                        short_title = main_part['НаимОрг']
+                    else:
+                        short_title = None
 
-            if Company.objects.filter(inn=inn).count() > 0:
-                continue
+                if Company.objects.filter(inn=inn).count() == 0:
+                    company = Company(inn=inn)
+                    alive = Alive(
+                        inn=company,
+                        date_add_to_base=datetime.now().date(),
+                        date_create=datetime.now().date(),
+                        date_disappear=None,
+                        still_alive=True,
+                        still_not_found=False,
+                        life_duration_years=0,
+                    )
+                else:
+                    company = Company.objects.get(inn=inn)
+                    alive = Alive.objects.get(inn=inn)
 
-            location_code = int(item.find('СведМН')['КодРегион'])
-            company = Company(
-                inn=inn,
-                owner_name=owner_name,
-                short_title=short_title,
-                is_ip=is_ip,
-                location_code=location_code,
-                region_name=REGION_TYPES[location_code],
-            )
-            to_create['company'].append(company)
-            company.save()
+                location_code = int(item.find('СведМН')['КодРегион'])
+                company.owner_name = owner_name
+                company.short_title = short_title
+                company.is_ip = is_ip
+                company.location_code = location_code
+                company.region_name = REGION_TYPES[location_code]
+                company.save()
 
-            alive = Alive(
-                _company=company,
-                date_add_to_base=datetime.now().date(),
-                # не совсем корректно, нужно найти подходящу базу
-                date_create=maya.parse(item['ДатаВклМСП']).datetime(),
-                date_disappear=None,
-                still_alive=True,
-                still_not_found=False,
-                life_duration_years=0,
-            )
-            to_create['alive'].append(alive)
-            to_create['okved'].extend(_add_okved(company, item))
+                alive.date_create = maya.parse(item['ДатаВклМСП']).datetime()
+                alive.still_not_found = False
+                alive.save()
 
-            company.save()
-            alive.save()
-
-
-        except:
-            print('Error while parsing:')
-            print(item.prettify())
-            print('\n***\nEroor:\n')
-            traceback.print_exc()
-            print('\n***\n')
-            break
-
-    for x in ['company', 'alive', 'okved']:
-        print(f'in {x} {len(to_create[x])} items')
-
-    #Company.objects.bulk_create(to_create['company'])
-    #Alive.objects.bulk_create(to_create['alive'])
-    #OKVED.objects.bulk_create(to_create['okved'])
-    print(f'it took {(time.time() - now_time)}')
-
-
-def _add_okved(company, item):
-    buf = []
-    # prime
-    for okved in item.find('СвОКВЭД').findAll('СвОКВЭДОсн'):
-        buf.append(OKVED(
-            _company=company,
-            code=okved['КодОКВЭД'],
-            code_name=okved['НаимОКВЭД'],
-            is_prime=True,
-        ))
-    # extra
-    for okved in item.find('СвОКВЭД').findAll('СвОКВЭДДоп'):
-        buf.append(OKVED(
-            _company=company,
-            code=okved['КодОКВЭД'],
-            code_name=okved['НаимОКВЭД'],
-            is_prime=True,
-        ))
-    return buf
+            except:
+                print('Error while parsing:')
+                print(item.prettify())
+                print('\n***\nEroor:\n')
+                traceback.print_exc()
+                print('\n***\n')
+                break
 
 
 def parseNumEmployees(filename):
@@ -154,7 +111,7 @@ def parseNumEmployees(filename):
         for item in soup.find_all('Документ'):
             cnt += 1
             try:
-                inn = item.find('СведНП')['ИННЮЛ']
+                inn = int(item.find('СведНП')['ИННЮЛ'])
                 employee_num = int(item.find('СведССЧР')['КолРаб'])
 
                 employee_num_obj = None
@@ -290,7 +247,7 @@ PAGE_TYPES = [
         'url_name': '7707329152-rsmp',
         'parse_func': parseCompany
     },
-    {
+    {   
         'name': 'Сведения о среднесписочной численности работников организации',
         'url_name': '7707329152-sshr',
         'parse_func': parseNumEmployees,
@@ -334,13 +291,12 @@ def addToDB(page_type, steps=None, skip_steps=None, need_load=None, need_unzip=N
         extractToDir(filename, dirname)
 
     for i, xml_file in enumerate(os.listdir(dirname)):
-        if steps is not None and i >= steps:
-            break
         if skip_steps is not None and i < skip_steps:
             continue
         print(f'{i}/{len(os.listdir(dirname))}')
         page_type['parse_func'](os.path.join(dirname, xml_file))
-
+        if steps is not None and i > steps:
+            break
 
 
 def fill():
@@ -419,18 +375,7 @@ def __test_with_load():
 
 
 def foo():
-    addToDB(PAGE_TYPES[0], steps=1, need_load=False, need_unzip=False)
-    #
-    # for x in range(100, 200):
-    #     x = str(x)
-    #     item = Company()
-    #     item.inn = str(x)
-    #     item.is_ip = True
-    #     item.location_code = 10
-    #     item.save()
-    #
-    # for f in Company._meta.fields:
-    #     print(f)
+    addToDB(PAGE_TYPES[0], steps=10, need_load=False, need_unzip=False)
 
 
 # 'Государственная пошлина'

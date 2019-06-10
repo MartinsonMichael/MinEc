@@ -31,9 +31,6 @@ ALLOWED_HOSTS = ['0.0.0.0', 'localhost', '127.0.0.1', '84.201.147.95']
 # Application definition
 
 INSTALLED_APPS = [
-    # 'rest_framework',
-    # 'django_filters',
-    # 'django_tables2',
     'dbcontroller',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -41,7 +38,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'MinEcProject.apps.MinecprojectConfig',
 ]
 
 MIDDLEWARE = [
@@ -85,11 +81,38 @@ WSGI_APPLICATION = 'dj_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'base2',
+        'USER': 'michael2',
+        'PASSWORD': '123',
+        'HOST': 'localhost',
+        'PORT': '',
     }
+
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
+    #     'NAME': 'db_postgres',
+    #     'USER': 'michael',
+    #     'PASSWORD': '123',
+    #     'HOST': 'localhost',
+    #     'PORT': '',
+    # }
+
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    # }
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators

@@ -32,9 +32,7 @@ def create_TAX_DICT():
 
 def fill_ASK_DICT_with_model(model, ASK_DICT):
     for i, field in enumerate(model._meta.get_fields()):
-        if isinstance(field, models.OneToOneRel) or\
-                isinstance(field, models.ForeignKey) or\
-                isinstance(field, models.ManyToOneRel):
+        if isinstance(field, models.OneToOneRel):
             continue
 
         if field.name.lower() == 'id':

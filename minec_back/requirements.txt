@@ -22,3 +22,5 @@ uWSGI==2.0.18
 pendulum==2.0.4
 unicodecsv==0.14.1
 django-queryset-csv==1.0.2
+postgres==2.2.1
+psycopg2==2.7.5

@@ -90,14 +90,12 @@ def perform_api(request):
     return resp
 
 
-import csv
-
 def sent_q_as_file(request):
     options = dict(request.GET)
     query = process_options(options)
     file_name = "file_" + str(datetime.datetime.now()).replace(' ', '_') + ".csv"
 
-    write_csv(query, open(file_name, 'wb'))
+    write_csv(query, open(file_name, 'wb', 777))
 
     print(f'save {file_name}')
 

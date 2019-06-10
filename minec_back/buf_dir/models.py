@@ -1,6 +1,6 @@
 from django.db import models
 from collections import defaultdict
-from django.core.cache import cache
+
 
 LOCATION_TYPES = {
     'город',
@@ -100,9 +100,7 @@ REGION_TYPES = defaultdict(lambda: 'НЕИЗВЕСТНО', {
  77: 'москва город',
  78: 'санкт-петербург город',
  79: 'еврейская автономная область',
- 81: 'пермский край',
  83: 'ненецкий автономный округ',
- 85: 'иркутская область',
  86: 'ханты-мансийский автономный округ - югра автономный округ',
  87: 'чукотский автономный округ',
  89: 'ямало-ненецкий автономный округ',
@@ -112,24 +110,9 @@ REGION_TYPES = defaultdict(lambda: 'НЕИЗВЕСТНО', {
 TECH_FILED = "technical filed"
 
 
-class SheduleTable(models.Model):
-    date = models.DateField(null=False)
-    type = models.TextField(
-        choices=[
-            (0, 'NONE'),
-            (1, 'load'),
-            (2, 'unzip'),
-            (3, 'add'),
-        ],
-        default='NONE',
-        null=False,
-    )
-    name = models.TextField(max_length=200)
-
-
 class Company(models.Model):
     # primary key
-    inn = models.TextField("ИНН", max_length=20, null=True, unique=True)
+    inn = models.IntegerField("ИНН", primary_key=True)
 
     # main fields
     is_ip = models.BooleanField("является ИП", null=True)
@@ -142,26 +125,18 @@ class Company(models.Model):
     region_name = models.TextField(
         "Название региона",
         choices=[(x, y) for (x, y) in REGION_TYPES.items()],
-        default=REGION_TYPES[0],
-        null=True,
+        default=REGION_TYPES[0]
     )
 
 
 class Alive(models.Model):
-    _company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    inn = models.OneToOneField(Company, on_delete=models.CASCADE)
     date_create = models.DateField("дата создания компании", null=True)
-    date_add_to_base = models.DateField("дата добавления в базу", null=True)
+    date_add_to_base = models.DateField("дата добавления в базу", null=False)
     date_disappear = models.DateField("дата прекращения существования", null=True)
     still_alive = models.BooleanField("еще существует?", null=False, default=True)
-    life_duration_years = models.IntegerField("продолжительность существования (лет)", null=True)
+    life_duration_years = models.IntegerField("продолжительность существования (лет)", null=False)
     still_not_found = models.BooleanField(TECH_FILED, null=True)
-
-
-class OKVED(models.Model):
-    _company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    code = models.TextField(verbose_name='Код ОКВЭД', max_length=21, null=True)
-    code_name = models.TextField(verbose_name='Название ОКВЭД', max_length=160, null=True)
-    is_prime = models.BooleanField(verbose_name='Основное ОКВЭД?', null=True)
 
 
 class EmployeeNum(models.Model):
