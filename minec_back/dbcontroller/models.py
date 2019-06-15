@@ -112,7 +112,7 @@ REGION_TYPES = defaultdict(lambda: 'НЕИЗВЕСТНО', {
 TECH_FILED = "technical filed"
 
 
-class SheduleTable(models.Model):
+class ScheduleTable(models.Model):
     date = models.DateField(null=False)
     type = models.TextField(
         choices=[
@@ -120,11 +120,14 @@ class SheduleTable(models.Model):
             (1, 'load'),
             (2, 'unzip'),
             (3, 'add'),
+            (4, 'done'),
         ],
         default='NONE',
         null=False,
     )
-    name = models.TextField(max_length=200)
+    zip_file_name = models.TextField(max_length=30, null=True)
+    base_name = models.TextField(max_length=30, null=False)
+    file_name = models.TextField(max_length=200, null=True)
 
 
 class Company(models.Model):
@@ -163,15 +166,18 @@ class OKVED(models.Model):
     code_name = models.TextField(verbose_name='Название ОКВЭД', max_length=160, null=True)
     is_prime = models.BooleanField(verbose_name='Основное ОКВЭД?', null=True)
 
+    class Meta:
+        unique_together = ('code', '_company')
+
 
 class EmployeeNum(models.Model):
-    inn = models.OneToOneField(Company, on_delete=models.CASCADE)
+    _company = models.OneToOneField(Company, on_delete=models.CASCADE)
     employee_num = models.IntegerField("количество работников", null=True)
 
 
 class TaxBase(models.Model):
-    inn = models.OneToOneField(Company, on_delete=models.CASCADE)
-    date_fns = models.DateField('время добавления ФНСом информации о налогах', null=True)
+    _company = models.OneToOneField(Company, on_delete=models.CASCADE)
+    date = models.DateField(verbose_name='дата помещения в базу', null=False)
 
     tax_atribute_0 = models.FloatField(
         verbose_name='Задолженность и перерасчеты по ОТМЕНЕННЫМ НАЛОГАМ'
@@ -232,3 +238,6 @@ class BaseIncome(models.Model):
     inn = models.OneToOneField(Company, on_delete=models.CASCADE)
     income = models.FloatField('доход')
     outcome = models.FloatField('расход')
+
+
+USED_MODELS = [Company, Alive, TaxBase, EmployeeNum, BaseIncome, OKVED]

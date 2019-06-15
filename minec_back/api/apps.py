@@ -11,7 +11,7 @@ import os
 @unique
 class Errors(Enum):
     parse = 0
-    zero = 1
+    zero =  1
     too_large = 2
     json_dump = 3
 
@@ -30,7 +30,6 @@ class Errors(Enum):
 
 class ApiConfig(AppConfig):
     name = 'api'
-
 
 def get_template_HTTP_RESPONSE():
     resp = HttpResponse()

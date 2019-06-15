@@ -6,7 +6,8 @@ __pycache__/
 watch.ipynb
 minec_back/buffer/*
 MinEc_prod/*
-
+*migrations*
+ 
 # C extensions
 *.so
 

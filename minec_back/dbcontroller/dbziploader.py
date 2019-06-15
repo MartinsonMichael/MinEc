@@ -19,7 +19,7 @@ TAX_DICT = None
 from dbcontroller.models import REGION_TYPES
 
 
-def loadNewData(name, filename):
+def loadNewData(name, filename=None):
     print('load data...')
     dataname = "www.nalog.ru/opendata/" + name
     html = requests.get("http://" + dataname).text
@@ -27,10 +27,12 @@ def loadNewData(name, filename):
     partwithdatalink = str(soup.find(text="Гиперссылка (URL) на набор").parent.parent)
     datalink = BeautifulSoup(partwithdatalink, 'html.parser').find('a').get('href')
 
+    if filename is None:
+        filename = name + '_data_folder'
     file = open(filename, 'wb', 0o777)
     data = urllib.request.urlopen(datalink)
     for line in data:
-            file.write(line)
+        file.write(line)
 
 
 def extractToDir(filename, dirname):

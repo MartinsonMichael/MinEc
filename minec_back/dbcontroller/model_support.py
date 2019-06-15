@@ -1,8 +1,5 @@
 from .models import *
 
-#USED_MODELS = [Company, Alive, TaxBase, EmployeeNum, BaseIncome]
-USED_MODELS = [Company]
-
 def create_ASK_DICT():
     ASK_DICT = dict()
     for model in USED_MODELS:
