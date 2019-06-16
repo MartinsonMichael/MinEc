@@ -7,6 +7,7 @@ watch.ipynb
 minec_back/buffer/*
 MinEc_prod/*
 *migrations*
+stuff/*
  
 # C extensions
 *.so
