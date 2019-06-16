@@ -5,22 +5,22 @@ import urllib.request
 import requests
 import os
 import zipfile
-from .models import Company, EmployeeNum, BaseIncome, TaxBase
+from .models import Company, EmployeeNum, BaseIncome, TaxBase, OKVED
 
-from . import parser
+from dbcontroller import parsers
 
 BUFFER_DIR = './buffer/'
 PAGE_TYPES ={
     Company: {
         'name': 'Единый реестр субъектов малого и среднего предпринимательства',
         'url_name': '7707329152-rsmp',
-        'parser': parser.CompanyMainParser,
+        'parser': parsers.CompanyMainParser,
         'priority': 10,
     },
     EmployeeNum: {
         'name': 'Сведения о среднесписочной численности работников организации',
         'url_name': '7707329152-sshr',
-        'parser': parser.EmployeeNum,
+        'parser': parsers.EmployeesNumParser,
         'priority': 1,
     },
     BaseIncome: {
@@ -28,15 +28,21 @@ PAGE_TYPES ={
                 ' (финансовой) отчетности организации за год, предшествующий '
                 'году размещения таких сведений на сайте ФНС России',
         'url_name': '7707329152-revexp',
-        'parser': lambda x: 0,
+        'parser': parsers.IncomeParser,
         'priority': 1,
     },
     TaxBase: {
         'name': 'НАЛОГИ',
         'url_name': '7707329152-paytax',
-        'parser': parser.TaxParser,
+        'parser': parsers.TaxParser,
         'priority': 1,
     },
+    OKVED: {
+        'name': 'ОКВЕД',
+        'url_name': '7707329152-rsmp',
+        'parser': parsers.OkvedParser,
+        'priority': 1,
+    }
 }
 
 

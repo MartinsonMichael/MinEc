@@ -7,8 +7,7 @@ class EmployeesNumParser(AbstractFiller):
     def __init__(self, steps=None):
         super(EmployeesNumParser, self).__init__(cur_model=models.EmployeeNum, steps=steps)
 
-    def parse_item(self, item=None):
-        inn = item.find('СведНП')['ИННЮЛ']
+    def parse_item(self, inn, item=None):
         employee_num = int(item.find('СведССЧР')['КолРаб'])
 
         if models.Company.objects.filter(inn=inn).count() == 0:

@@ -1,4 +1,9 @@
-from .models import *
+from django.db import models
+from dbcontroller.models import \
+    TaxBase, Company, Alive, EmployeeNum, BaseIncome, OKVED
+
+
+USED_MODELS = [Company, Alive, TaxBase, EmployeeNum, BaseIncome, OKVED]
 
 def create_ASK_DICT():
     ASK_DICT = dict()

@@ -15,20 +15,7 @@ class TaxParser(AbstractFiller):
         if datetime.datetime.now().date().day % 2 == 1:
             self._adding_date = datetime.datetime.now().date() + datetime.timedelta(days=1)
 
-    def parse_item(self, item=None):
-        main_part = item.find('СведНП')
-        inn = None
-
-        if main_part.has_attr('ИННФЛ'):
-            inn = main_part['ИННФЛ']
-
-        if main_part.has_attr('ИННЮЛ'):
-            inn = main_part['ИННЮЛ']
-
-        if models.Company.objects.filter(inn=inn).count() == 0:
-            return None
-
-        print('inn found!')
+    def parse_item(self, inn, item=None):
 
         company = models.Company.objects.filter(inn=inn)[0]
 

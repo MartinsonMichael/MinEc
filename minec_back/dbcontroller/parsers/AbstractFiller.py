@@ -2,7 +2,7 @@ import bs4
 import time
 import os
 import datetime
-from . import models
+from dbcontroller import models
 
 
 class AbstractFiller:
@@ -25,13 +25,14 @@ class AbstractFiller:
             if q_add.filter(file_name=xml_file).count() == 0:
                 try:
                     self.parse_file(os.path.join(folder_name, xml_file))
-                    schedule_item = models.ScheduleTable(
-                        date=datetime.datetime.now().date(),
-                        type='add',
-                        base_name=self.base_name,
-                        file_name=xml_file,
-                    )
-                    schedule_item.save()
+                    if self.steps is None:
+                        schedule_item = models.ScheduleTable(
+                            date=datetime.datetime.now().date(),
+                            type='add',
+                            base_name=self.base_name,
+                            file_name=xml_file,
+                        )
+                        schedule_item.save()
                 except:
                     everything_goes_well = False
         return everything_goes_well
@@ -43,12 +44,36 @@ class AbstractFiller:
         to_create = []
         for item in soup.find_all('Документ'):
             try:
-                model_item = self.parse_item(item)
+                inn = AbstractFiller.get_inn(item)
+                if inn is None:
+                    continue
+                model_item = self.parse_item(inn, item)
                 if model_item is not None:
+                    continue
+                if isinstance(model_item, list):
+                    to_create.extend(model_item)
+                else:
                     to_create.append(model_item)
             finally:
                 pass
         self.cur_model.objects.bulk_create(to_create)
 
-    def parse_item(self, item=None):
+    @staticmethod
+    def get_inn(item):
+        try:
+            return item.find('ИПВклМСП')['ИННФЛ']
+        except:
+            pass
+        try:
+            return item.find('ОргВклМСП')['ИННЮЛ']
+        except:
+            pass
+        try:
+            return item.find('СведНП')['ИННЮЛ']
+        except:
+            pass
+        print(item.pretitfy(), file=open('have_no_inn', 'w+'))
+        return None
+
+    def parse_item(self, inn, item=None):
         return None
