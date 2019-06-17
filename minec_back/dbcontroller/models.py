@@ -9,6 +9,7 @@ class ScheduleTable(models.Model):
             (0, 'NONE'),
             (1, 'load'),
             (2, 'unzip'),
+            (21, 'need_to_add'),
             (3, 'add'),
             (4, 'done'),
         ],

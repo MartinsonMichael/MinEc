@@ -84,6 +84,13 @@ def _try_update_base(base, steps=None):
                 zip_file_name=page_type['url_name'],
             )
             schedule_item.save()
+            schedule_item = ScheduleTable(
+                date=datetime.datetime.now().date(),
+                type='need_to_add',
+                zip_file_name=page_type['url_name'],
+                file_name=str(len(os.listdir(folder_name))),
+            )
+            schedule_item.save()
         else:
             return False
 
