@@ -1,6 +1,7 @@
 from django.db import models
 from dbcontroller.models import \
     TaxBase, Company, Alive, EmployeeNum, BaseIncome, OKVED
+from dbcontroller.models_constants import *
 
 
 USED_MODELS = [Company, Alive, TaxBase, EmployeeNum, BaseIncome, OKVED]
