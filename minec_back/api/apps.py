@@ -40,6 +40,7 @@ def get_template_HTTP_RESPONSE():
 def perform_api(request):
     resp = get_template_HTTP_RESPONSE()
     options = dict(request.GET)
+    #options = {k.replace('|||', ' '): [v[0].replace('|||', ' ')] for k, v in options}
     print(options)
 
     table_err = []

@@ -2,9 +2,11 @@ from django.db import models
 from dbcontroller.models import \
     TaxBase, Company, Alive, EmployeeNum, BaseIncome, OKVED
 from dbcontroller.models_constants import *
+from dbcontroller.description_dict import get_description
 
 
 USED_MODELS = [Company, Alive, TaxBase, EmployeeNum, BaseIncome, OKVED]
+
 
 def create_ASK_DICT():
     ASK_DICT = dict()
@@ -33,21 +35,29 @@ def create_TAX_DICT():
     return TAX_DICT
 
 
+def iterate_over_visible_fields(model=None):
+    all_models = [model] if model is not None else USED_MODELS
+    for cur_model in all_models:
+        for field in cur_model._meta.get_fields():
+            if isinstance(field, models.OneToOneRel) or\
+                    isinstance(field, models.ForeignKey) or\
+                    isinstance(field, models.ManyToOneRel):
+                continue
+
+            if field.name.lower() == 'id':
+                continue
+
+            if field.name.lower() == 'inn' and not model.__name__ == 'Company':
+                continue
+
+            if field.verbose_name.startswith(TECH_FILED):
+                continue
+
+            yield field
+
+
 def fill_ASK_DICT_with_model(model, ASK_DICT):
-    for i, field in enumerate(model._meta.get_fields()):
-        if isinstance(field, models.OneToOneRel) or\
-                isinstance(field, models.ForeignKey) or\
-                isinstance(field, models.ManyToOneRel):
-            continue
-
-        if field.name.lower() == 'id':
-            continue
-
-        if field.name.lower() == 'inn' and not model.__name__ == 'Company':
-            continue
-
-        if field.verbose_name.startswith(TECH_FILED):
-            continue
+    for field in iterate_over_visible_fields(model):
 
         name = field.name
         if model.__name__ != 'Company':
@@ -58,6 +68,7 @@ def fill_ASK_DICT_with_model(model, ASK_DICT):
             'table': model.__name__,
             'human': field.verbose_name[:60],
             'machine': name,
+            'description': get_description(field),
             'sign': [{'value': 'none', 'name': '---'}],
             'suggestions': [],
         }
@@ -73,6 +84,7 @@ def fill_ASK_DICT_with_model(model, ASK_DICT):
                 'type': 'number',
                 'sign': [
                     {'value': 'range', 'name': 'одно из'},
+                    {'value': 'eq', 'name': '='},
                     {'value': 'gt', 'name': '>'},
                     {'value': 'lt', 'name': '<'},
                     {'value': 'gte', 'name': '>='},
@@ -85,6 +97,7 @@ def fill_ASK_DICT_with_model(model, ASK_DICT):
                 'type': 'date',
                 'sign': [
                     {'value': 'range', 'name': 'одно из'},
+                    {'value': 'eq', 'name': '='},
                     {'value': 'gt', 'name': '>'},
                     {'value': 'lt', 'name': '<'},
                     {'value': 'gte', 'name': '>='},
@@ -95,7 +108,11 @@ def fill_ASK_DICT_with_model(model, ASK_DICT):
         if field.choices is not None and len(field.choices) > 0:
             ASK_DICT[name].update({
                 'type': 'multy',
-                'sign': [{'value': 'range', 'name': 'одно из'}],
-                'suggestions': field.choices,
+                'sign': [
+                    {'value': 'eq', 'name': '='},
+                    {'value': 'range', 'name': 'одно из'}
+                ],
+                'suggestions': [{'name': x[1], 'value': x[0]} for x in field.choices],
+                'machine_mapper': {x[0]: x[1] for x in field.choices},
             })
 

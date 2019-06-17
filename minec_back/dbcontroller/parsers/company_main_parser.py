@@ -7,10 +7,11 @@ class CompanyMainParser(AbstractFiller):
     def __init__(self, steps=None):
         super(CompanyMainParser, self).__init__(cur_model=models.Company, steps=steps)
 
-    def parse_item(self, inn, item):
+    def parse_item(self, inn, item=None):
         owner_name = None
         short_title = None
         is_ip = None
+        company_category = item['КатСубМСП']
 
         if item.find('ИПВклМСП') is not None:
             main_part = item.find('ИПВклМСП')
@@ -38,6 +39,7 @@ class CompanyMainParser(AbstractFiller):
             owner_name=owner_name,
             short_title=short_title,
             is_ip=is_ip,
+            company_category=company_category,
             location_code=location_code,
             region_name=models.REGION_TYPES[location_code],
             federal_name=models.REGION_TO_FEDERAL[models.REGION_TYPES[location_code]],

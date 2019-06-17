@@ -19,8 +19,12 @@ def parse_value(value, case):
     if case['type'] == 'bool':
         return [bool(value[0])]
 
-    if case['type'] == 'multi':
-        return value
+    if case['type'] == 'multy':
+        print(value)
+        print(case)
+        new_value = [case['machine_mapper'][int(x)] for x in value]
+        print(new_value)
+        return [case['machine_mapper'][int(x)] for x in value]
 
     if case['type'] == 'number':
         value = value[0].split(',')

@@ -2,6 +2,13 @@ from django.db import models
 from dbcontroller.models_constants import *
 
 
+class LoadDates(models.Model):
+    date = models.DateField(
+        verbose_name="Даты обновлений",
+        null=False
+    )
+
+
 class ScheduleTable(models.Model):
     date = models.DateField(null=False)
     type = models.TextField(
@@ -30,6 +37,13 @@ class Company(models.Model):
     # title = models.TextField("название (не для ИП)", null=True, max_length=100)
     short_title = models.TextField("краткое название (не для ИП)", null=True, max_length=100)
     owner_name = models.TextField("имя владельца (для ИП)", null=True, max_length=100)
+    company_category = models.TextField(
+        verbose_name="категория компании",
+        max_length=20,
+        choices=[(0, 'тип не определн'), (1, 'микропредприятие'),
+                 (2, 'малое предприятие'), (3, 'среднее предприятие')],
+        default=0,
+    )
 
     # location
     location_code = models.IntegerField("код региона", null=True)
@@ -42,10 +56,7 @@ class Company(models.Model):
     federal_name = models.TextField(
         verbose_name="федеральный округ",
         max_length=50,
-        choices=[
-            ({y: x for x, y in REGION_TYPES.items()}[reg], fed)
-            for reg, fed in REGION_TO_FEDERAL.items()
-        ],
+        choices=[(x, y) for x, y in FEDERAL_TYPES.items()],
         default="НЕИЗВЕСТНО",
     )
 
@@ -53,21 +64,23 @@ class Company(models.Model):
 class Alive(models.Model):
     _company = models.ForeignKey(Company, on_delete=models.CASCADE)
     date_create = models.DateField("дата создания компании", null=True)
-    date_add_to_base = models.DateField("дата добавления в базу", null=True)
+    # date_add_to_base = models.DateField("дата добавления в базу", null=True)
     date_disappear = models.DateField("дата прекращения существования", null=True)
     still_alive = models.BooleanField("еще существует?", null=False, default=True)
     life_duration_years = models.IntegerField("продолжительность существования (лет)", null=True)
+    disappear_factor = models.TextField("причина прекращения существования", max_length=100, null=True)
+
     still_not_found = models.BooleanField(TECH_FILED, null=True)
 
 
 class OKVED(models.Model):
     _company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    code = models.TextField(verbose_name='Код ОКВЭД', max_length=21, null=True)
-    code_name = models.TextField(verbose_name='Название ОКВЭД', max_length=160, null=True)
-    is_prime = models.BooleanField(verbose_name='Основное ОКВЭД?', null=True)
+    okved_code = models.TextField(verbose_name='Код ОКВЭД', max_length=21, null=True)
+    okved_code_name = models.TextField(verbose_name='Название ОКВЭД', max_length=160, null=True)
+    okved_is_prime = models.BooleanField(verbose_name='Основное ОКВЭД?', null=True)
 
     class Meta:
-        unique_together = ('code', '_company')
+        unique_together = ('okved_code', '_company')
 
 
 class EmployeeNum(models.Model):
@@ -77,7 +90,7 @@ class EmployeeNum(models.Model):
 
 class TaxBase(models.Model):
     _company = models.OneToOneField(Company, on_delete=models.CASCADE)
-    date = models.DateField(verbose_name='дата помещения в базу', null=False)
+    _date = models.DateField(verbose_name='дата помещения в базу', null=False)
 
     tax_atribute_0 = models.FloatField(
         verbose_name='Задолженность и перерасчеты по ОТМЕНЕННЫМ НАЛОГАМ'

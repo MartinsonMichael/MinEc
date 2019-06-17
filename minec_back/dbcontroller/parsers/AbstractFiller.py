@@ -11,6 +11,7 @@ class AbstractFiller:
         self.cur_model = cur_model
         self.steps = steps
         self.base_name = cur_model.__name__
+        self.MAX_SIZE_TO_CREATE = 5 * 10**3
 
     def parse_folder(self, folder_name):
         q_add = models.ScheduleTable.objects\
@@ -19,12 +20,14 @@ class AbstractFiller:
             .filter(type='add')
 
         everything_goes_well = True
+        to_create = []
         for i, xml_file in enumerate(os.listdir(folder_name)):
             if self.steps is not None and i >= self.steps:
                 break
             if q_add.filter(file_name=xml_file).count() == 0:
                 try:
-                    self.parse_file(os.path.join(folder_name, xml_file))
+                    cur_items = self.parse_file(os.path.join(folder_name, xml_file))
+                    to_create.extend(cur_items)
                     if self.steps is None:
                         schedule_item = models.ScheduleTable(
                             date=datetime.datetime.now().date(),
@@ -35,6 +38,11 @@ class AbstractFiller:
                         schedule_item.save()
                 except:
                     everything_goes_well = False
+            if len(to_create) > self.MAX_SIZE_TO_CREATE:
+                self.cur_model.objects.bulk_create(to_create, batch_size=500)
+                to_create = []
+        if len(to_create) != 0:
+            self.cur_model.objects.bulk_create(to_create, batch_size=500)
         return everything_goes_well
 
     def parse_file(self, filename):
@@ -48,7 +56,7 @@ class AbstractFiller:
                 if inn is None:
                     continue
                 model_item = self.parse_item(inn, item)
-                if model_item is not None:
+                if model_item is None:
                     continue
                 if isinstance(model_item, list):
                     to_create.extend(model_item)
@@ -56,7 +64,8 @@ class AbstractFiller:
                     to_create.append(model_item)
             finally:
                 pass
-        self.cur_model.objects.bulk_create(to_create)
+        #self.cur_model.objects.bulk_create(to_create)
+        return to_create
 
     @staticmethod
     def get_inn(item):

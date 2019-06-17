@@ -13,8 +13,8 @@ import { AgregatorContorll } from './agregators';
 import { GroupbyContorll } from './groupper';
 
 
-//const addr = '127.0.0.1:8000';
-const addr = '84.201.147.95';
+const addr = '127.0.0.1:8000';
+//const addr = '84.201.147.95';
 
 
 class Main extends Component {
@@ -53,7 +53,8 @@ class Main extends Component {
 
   makeParamsForQuery(){
     // 0 - filters
-      let spase = '___';
+      const spase = '___';
+      const real_space = '|||';
       let params = {};
       if (Array.isArray(this.state.data[0])) {
           for (let i = 0; i < this.state.data[0].length; i++) {
@@ -65,7 +66,7 @@ class Main extends Component {
                   this.state.data[0][i].sign + spase;
               if (Array.isArray(this.state.data[0][i].value)) {
                   for (let temp = 0; temp < this.state.data[0][i].value.length; temp++) {
-                      params['filter_' + i] += this.state.data[0][i].value[temp].name + spase;
+                      params['filter_' + i] += this.state.data[0][i].value[temp] + spase;
                   }
               } else {
                   params['filter_' + i] += this.state.data[0][i].value + spase;
@@ -95,6 +96,17 @@ class Main extends Component {
       }
 
       return params;
+  }
+
+  showInfo(){
+    alert('Это приложение взяиможействия с базами данных Федеральной налоговой службы.\n' +
+        'Приложение поддерживает фильтрацию, группировки и агрегации. (Обертка над sql) ' +
+        'Для добавления элемента (фильтра, группировки, агрегации) нажмите на соответствующую кнопку. ' +
+        'Вначале применяется фильтрация, потом группировки, далее к каждой группе применяются все агрегации. ' +
+        'В случае отсутствия группировок, агрегация применяется ко всем данным.\n\n' +
+        'Так как в базе хранятся данные за многие промежутки времени, обязательным является либо ' +
+        'фильтрация по дате записей, либо группировка по датам записей (Поле "дата обновления").' +
+        'Чтобы посмотреть возможные даты записей нажмите кнопку "Показать даты обновлений"')
   }
 
   getQuery(){
@@ -132,9 +144,22 @@ class Main extends Component {
     this.setState({is_file : !this.state.is_file})
   }
 
+  get_update_date(){
+    axios.get(
+      ''.concat('http://', addr, '/api/get_updates_dates')
+    )
+      .then((res) => this.onLoadQuery(res))
+      .catch(function (error) {
+          console.log(error);
+      });
+    }
+
   render() {
     return (
         <div className="Main">
+            <button onClick={() => this.showInfo()}>Справка</button>
+            <button onClick={() => this.get_update_date()}>Показать даты обновлений</button>
+            <p/>
             <label>
                 {this.state.app_state}
             </label>
@@ -145,7 +170,7 @@ class Main extends Component {
                 checked={this.state.is_file}
                 onChange={this.onFileLoadSelect}
             />
-                Возврящать запрос файлом
+                Возвращать запрос файлом
             </label>
           <div className="Controllers">
             <FilterController onNewData={this.handleChildChange} ask_dict={this.props.ask_dict}/>

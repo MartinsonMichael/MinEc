@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import './App.css';
+import Popup from "reactjs-popup";
 
 
 const ReactTags = require('react-tag-autocomplete');
@@ -12,6 +13,7 @@ class FilterField extends Component{
         pos_prop : Object.keys(props.ask_dict),
         data : 0,
         error : 'None',
+        info: false,
     };
     this.state.data = {
             property: this.state.pos_prop[0],
@@ -25,6 +27,11 @@ class FilterField extends Component{
     this.validateDate = this.validateDate.bind(this);
     this.validateNumberString = this.validateNumberString.bind(this);
     this.delItem = this.delItem.bind(this);
+    this.showInfo = this.showInfo.bind(this);
+    this.showInfo = this.showInfo.bind(this);
+    this.render_multy = this.render_multy.bind(this);
+    this.handleValueArrayAdd = this.handleValueArrayAdd.bind(this);
+    this.handleValueArrayChange = this.handleValueArrayChange.bind(this);
 
     this.changeAfterProperty();
     this.handleFilterChange();
@@ -33,7 +40,7 @@ class FilterField extends Component{
   changeAfterProperty(){
       let data = this.state.data;
       if (this.props.ask_dict[data.property].suggestions.length > 0){
-        data.value = [].concat(this.props.ask_dict[data.property].suggestions[0]);
+        data.value = [].concat(this.props.ask_dict[data.property].suggestions[0].value);
       }
       if (this.props.ask_dict[data.property].type === 'date' || this.props.ask_dict[data.property].type === 'number'){
           data.value = "";
@@ -71,28 +78,36 @@ class FilterField extends Component{
       this.props.onNewData(this.props.index, this.state.data);
   };
 
- handleDelete (i) {
+ // handleDelete (i) {
+ //    let data = this.state.data;
+ //    data.value = data.value.slice(0);
+ //    data.value.splice(i, 1);
+ //    this.setState({ data : data })
+ //  }
+
+  handleValueArrayChange = (index) => (event) => {
     let data = this.state.data;
-    data.value = data.value.slice(0);
-    data.value.splice(i, 1);
+    data.value[index] = event.target.value;
+    this.setState({ data : data });
+      this.handleFilterChange()
+  };
+
+  handleValueArrayAdd(){
+    let data = this.state.data;
+    data.value = data.value.concat([this.props.ask_dict[data.property].suggestions[0]].value);
     this.setState({ data : data })
   }
-
-  handleAddition (tag) {
-    let data = this.state.data;
-    data.value = [].concat(data.value, tag);
-    this.setState({ data : data })
-  }
-
 
   validateDate(event){
      let str = event.target.value;
      //str = str.replace(' ', '');
      this.setState({error : 'None'});
      if (!str.match(/^\d{2}\.\d{2}\.\d{4}(-\d{2}\.\d{2}\.\d{4})?(,\d{2}\.\d{2}\.\d{4}(-\d{2}\.\d{2}\.\d{4})?)*$/)){
-        this.setState({error :
-                "date must be set of a single date 'DD.MM.YYYY' or a " +
-                "range DD.MM.YYYY-DD.MM.YYYY, separated by comma without spaces"})
+         const description = this.props.ask_dict[this.state.data.property].description;
+         alert('Неправильный формат данных!\n\n' + description.type_description)
+        // this.setState({error :
+        //         "date must be set of a single date 'DD.MM.YYYY' or a " +
+        //         "range DD.MM.YYYY-DD.MM.YYYY, separated by comma without spaces"})
      }
 
   }
@@ -102,9 +117,11 @@ class FilterField extends Component{
      //str = str.replace('( )', '');
      this.setState({error : 'None'});
      if (!str.match(/^(\d+(\.\d+)?,|\d+(\.\d+)?-\d+(\.\d+)?,)*(\d+(\.\d+)?|\d+(\.\d+)?-\d+(\.\d+)?)$/)){
-         this.setState({error :
-                 "number string should consist of numbers and ranges" +
-                 " separated by comma, like '12,23-34,234,250-800'"})
+         const description = this.props.ask_dict[this.state.data.property].description;
+         alert('Неправильный формат данных!\n\n' + description.type_description)
+         // this.setState({error :
+         //         "number string should consist of numbers and ranges" +
+         //         " separated by comma, like '12,23-34,234,250-800'"})
      }
   }
 
@@ -115,15 +132,75 @@ class FilterField extends Component{
      this.handleFilterChange();
   }
 
+  showInfo() {
+    this.setState({info: !this.state.info})
+  }
+
+  render_info() {
+    const description = this.props.ask_dict[this.state.data.property].description;
+    alert(description.name_description + '\n\n' + description.type_description)
+     // return (
+     //     <React.Fragment>
+     //         <Dialog open={true}>
+     //             <h1>{this.state.data.property}</h1>
+     //             <div>
+     //                 {description.name_description}
+     //                 {description.type_description}
+     //             </div>
+     //             <button onClick={this.showInfo()}>
+     //                 Ok
+     //             </button>
+     //         </Dialog>
+     //     </React.Fragment>
+     // )
+  }
+
+  render_multy(){
+      return (
+        <div>
+            {this.state.data.value.map((item, i) => (
+                <select
+                    value={item}
+                    onChange={this.handleValueArrayChange(i)}
+                >
+                    {this.props.ask_dict[this.state.data.property].suggestions.map((item2) => (
+                    <option value={item2.value}>
+                        {item2.name}
+                    </option>
+
+                    ))}
+                </select>
+            ))}
+            <button onClick={this.handleValueArrayAdd}>+</button>
+        </div>
+      )
+  }
+
   render() {
      if (this.state.data.property === '---'){
-         return (<a></a>)
+         return null
      }
-    return(
+     //const description = this.props.ask_dict[this.state.data.property].description;
+      const property_type = this.props.ask_dict[this.state.data.property].type;
+     return(
       <div className="row">
           <button onClick={() => this.delItem()}>
               X
           </button>
+          <button onClick={() => this.render_info()}>
+              ?
+          </button>
+          {/*<Popup position="top left">*/}
+          {/*  {close => (*/}
+          {/*    <div>*/}
+          {/*        {description.name_description}*/}
+          {/*        {description.type_description}*/}
+          {/*      <a className="close" onClick={close}>*/}
+          {/*        &times;*/}
+          {/*      </a>*/}
+          {/*    </div>*/}
+          {/*  )}*/}
+          {/*</Popup>*/}
         <select
             value={this.state.data.property}
             onSelect={this.handleChangeProperty}
@@ -149,7 +226,7 @@ class FilterField extends Component{
             ))}
         </select>
         <label>
-            {this.props.ask_dict[this.state.data.property].type === 'bool' ? (
+            {property_type === 'bool' ? (
                 <select
                     value={this.state.data.value}
                     onChange={this.handleChangeValue}
@@ -157,39 +234,27 @@ class FilterField extends Component{
                     <option value={"True"}> Да </option>
                     <option value={"False"}> Нет </option>
                 </select>
-            ) : (<a></a>)}
-            {this.props.ask_dict[this.state.data.property].suggestions.length > 0 ? (
-                <ReactTags
-                    tags={this.state.data.value}
-                    suggestions={this.props.ask_dict[this.state.data.property].suggestions}
-                    handleDelete={this.handleDelete.bind(this)}
-                    handleAddition={this.handleAddition.bind(this)}
-                />
-
-            ) : (<a></a>)}
-            {this.props.ask_dict[this.state.data.property].type === 'number' ? (
+            ) : null}
+            {property_type === 'multy' ? (
+                this.render_multy()
+            ) : null}
+            {property_type === 'number' ? (
                 <input
                     type="text"
                     value={this.state.data.value}
                     onChange={this.handleChangeValue}
                     onBlur={this.validateNumberString}
                 />
-            ) : (<a></a>)}
-            {this.props.ask_dict[this.state.data.property].type === 'date' ? (
+            ) : null}
+            {property_type === 'date' ? (
                 <input
                     type="text"
                     value={this.state.data.value}
                     onChange={this.handleChangeValue}
                     onBlur={this.validateDate}
                 />
-            ) : (<a></a>)}
+            ) : null}
         </label>
-          {this.state.error === 'None' ? (<a></a>) : (
-              <label>
-                  {this.state.error}
-              </label>
-
-          )}
 
       </div>
     );

@@ -198,4 +198,8 @@ REGION_TYPES = defaultdict(lambda: 'НЕИЗВЕСТНО', {
  92: 'севастополь город',
 })
 
+FEDERAL_TYPES = defaultdict(lambda x: "НЕИЗВЕСТНО", {
+ index: x for index, x in enumerate(set(REGION_TO_FEDERAL.values()))
+})
+
 TECH_FILED = "technical filed"
