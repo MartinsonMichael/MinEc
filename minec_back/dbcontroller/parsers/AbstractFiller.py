@@ -67,24 +67,43 @@ class AbstractFiller:
                     to_create.append(model_item)
             finally:
                 pass
-        #self.cur_model.objects.bulk_create(to_create)
+        # self.cur_model.objects.bulk_create(to_create)
         return to_create
 
     @staticmethod
     def get_inn(item):
         try:
-            return item.find('ИПВклМСП')['ИННФЛ']
+            inn = item.find('ИПВклМСП')['ИННФЛ']
+            if inn is not None:
+                return inn
         except:
             pass
         try:
-            return item.find('ОргВклМСП')['ИННЮЛ']
+            inn = item.find('ОргВклМСП')['ИННЮЛ']
+            if inn is not None:
+                return inn
         except:
             pass
         try:
-            return item.find('СведНП')['ИННЮЛ']
+            inn = item.find('СведНП')['ИННЮЛ']
+            if inn is not None:
+                return inn
         except:
             pass
-        print(item.pretitfy(), file=open('have_no_inn', 'w+'))
+        try:
+            main_part = item.find('СведНП')
+
+            if main_part.has_attr('ИННФЛ'):
+                inn = main_part['ИННФЛ']
+                return inn
+
+            if main_part.has_attr('ИННЮЛ'):
+                inn = main_part['ИННЮЛ']
+                return inn
+        except:
+            pass
+
+        print('No inn', item.pretitfy(), sep='\n', end='\n')
         return None
 
     def parse_item(self, inn, item=None):
