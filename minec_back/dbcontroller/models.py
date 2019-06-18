@@ -75,6 +75,7 @@ class Alive(models.Model):
 
 class OKVED(models.Model):
     _company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    upd_date = models.DateField(TECH_FILED, null=False)
     okved_code = models.TextField(verbose_name='Код ОКВЭД', max_length=21, null=True)
     okved_code_name = models.TextField(verbose_name='Название ОКВЭД', max_length=160, null=True)
     okved_is_prime = models.BooleanField(verbose_name='Основное ОКВЭД?', null=True)
@@ -85,12 +86,13 @@ class OKVED(models.Model):
 
 class EmployeeNum(models.Model):
     _company = models.OneToOneField(Company, on_delete=models.CASCADE)
+    upd_date = models.DateField(TECH_FILED, null=False)
     employee_num = models.IntegerField("количество работников", null=True)
 
 
 class TaxBase(models.Model):
     _company = models.OneToOneField(Company, on_delete=models.CASCADE)
-    _date = models.DateField(verbose_name='дата помещения в базу', null=False)
+    upd_date = models.DateField(TECH_FILED, null=False)
 
     tax_atribute_0 = models.FloatField(
         verbose_name='Задолженность и перерасчеты по ОТМЕНЕННЫМ НАЛОГАМ'
@@ -149,6 +151,7 @@ class TaxBase(models.Model):
 
 class BaseIncome(models.Model):
     _company = models.OneToOneField(Company, on_delete=models.CASCADE)
+    upd_date = models.DateField(TECH_FILED, null=False)
     income = models.FloatField('доход')
     outcome = models.FloatField('расход')
 

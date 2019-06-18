@@ -1,17 +1,23 @@
 from dbcontroller.parsers import AbstractFiller
 from dbcontroller import models
+from dbcontroller import model_support
 
 
 class CompanyMainParser(AbstractFiller):
 
-    def __init__(self, steps=None):
-        super(CompanyMainParser, self).__init__(cur_model=models.Company, steps=steps)
+    def __init__(self, steps=None, upd_date=None):
+        super(CompanyMainParser, self).__init__(
+            cur_model=models.Company,
+            steps=steps,
+            upd_date=upd_date
+        )
+        self.ASK_DICT = model_support.create_ASK_DICT()
 
     def parse_item(self, inn, item=None):
         owner_name = None
         short_title = None
         is_ip = None
-        company_category = item['КатСубМСП']
+        company_category = self.ASK_DICT['company_category']['machine_mapper'][int(item['КатСубМСП'])]
 
         if item.find('ИПВклМСП') is not None:
             main_part = item.find('ИПВклМСП')

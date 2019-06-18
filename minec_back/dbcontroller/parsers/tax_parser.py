@@ -6,8 +6,8 @@ import datetime
 
 class TaxParser(AbstractFiller):
 
-    def __init__(self, steps=None):
-        super(TaxParser, self).__init__(cur_model=models.TaxBase, steps=steps)
+    def __init__(self, steps=None, upd_date=None):
+        super(TaxParser, self).__init__(cur_model=models.TaxBase, steps=steps, upd_date=upd_date)
         self.TAX_DICT = model_support.create_TAX_DICT()
 
         # set add date to me even
@@ -21,6 +21,7 @@ class TaxParser(AbstractFiller):
 
         tax_item = models.TaxBase(
             _company=company,
+            _date=self.upd_date,
             date=self._adding_date,
         )
 

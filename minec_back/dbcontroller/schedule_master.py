@@ -5,7 +5,7 @@ import urllib.request
 import requests
 import os
 import zipfile
-from .models import Company, EmployeeNum, BaseIncome, TaxBase, OKVED
+from .models import Company, EmployeeNum, BaseIncome, TaxBase, OKVED, LoadDates
 
 from dbcontroller import parsers
 
@@ -48,13 +48,18 @@ PAGE_TYPES ={
 
 def master(steps=None):
     page_types = sorted(list(PAGE_TYPES.keys()), key=lambda x: PAGE_TYPES[x]['priority'])
+    upd_date = datetime.datetime.now().date()
+
+    LoadDates(date=upd_date).save()
 
     for base in page_types:
-        while not _try_update_base(base, steps=steps):
+        while not _try_update_base(base, steps=steps, upd_date=upd_date):
             pass
 
 
-def _try_update_base(base, steps=None):
+def _try_update_base(base, steps=None, upd_date=None):
+    if upd_date is None:
+        upd_date = datetime.datetime.now().date()
     q = ScheduleTable.objects.\
         filter(date__gte=datetime.datetime.now().date() - datetime.timedelta(days=14))
 
@@ -98,7 +103,7 @@ def _try_update_base(base, steps=None):
 
     # add
     if q.filter(type='add').count() != len(os.listdir(folder_name)):
-        parser = page_type['parser'](steps=steps)
+        parser = page_type['parser'](steps=steps, upd_date=upd_date)
         if parser.parse_folder(folder_name) and steps is None:
             schedule_item = ScheduleTable(
                 date=datetime.datetime.now().date(),

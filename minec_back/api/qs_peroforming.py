@@ -77,11 +77,24 @@ def process_single_filter(filter_str, q):
     return q
 
 
+def process_filter_upd_date(filter_str, q):
+    filter_str = filter_str.split('___')
+    prop = filter_str[0]
+    sign = filter_str[1]
+    value = filter_str[2:]
+    for x in ASK_DICT['upd_date']['upd_filter']:
+        q = process_single_filter('___'.join([x, sign, *value]), q)
+    return q
+
+
 def process_filters(options, q):
     for key, value in options.items():
         if key[:6] != 'filter':
             continue
-        q = process_single_filter(value[0], q)
+        if value[0].split('___')[0] == 'upd_date':
+            q = process_filter_upd_date(value[0], q)
+        else:
+            q = process_single_filter(value[0], q)
     return q
 
 
@@ -89,7 +102,10 @@ def process_groupby(options, q):
     values = []
     for key, value in options.items():
         if key[:6] == 'groupb':
-            values.append(value[0])
+            if value[0] != 'upd_date':
+                values.append(value[0])
+            else:
+                values.extend(ASK_DICT['upd_date']['upd_filter'])
     print('gb :', values)
     if len(values) > 0:
         q = q.values(*values)

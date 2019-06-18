@@ -7,7 +7,10 @@ from dbcontroller import models
 
 class AbstractFiller:
 
-    def __init__(self, cur_model, steps=None):
+    def __init__(self, cur_model, steps=None, upd_date=None):
+        self.upd_date = upd_date
+        if self.upd_date is None:
+            self.upd_date = datetime.datetime.now().date()
         self.cur_model = cur_model
         self.steps = steps
         self.base_name = cur_model.__name__
@@ -30,7 +33,7 @@ class AbstractFiller:
                     to_create.extend(cur_items)
                     if self.steps is None:
                         schedule_item = models.ScheduleTable(
-                            date=datetime.datetime.now().date(),
+                            date=self.upd_date,
                             type='add',
                             base_name=self.base_name,
                             file_name=xml_file,

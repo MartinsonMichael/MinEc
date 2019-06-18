@@ -13,8 +13,8 @@ import { AgregatorContorll } from './agregators';
 import { GroupbyContorll } from './groupper';
 
 
-const addr = '127.0.0.1:8000';
-//const addr = '84.201.147.95';
+//const addr = '127.0.0.1:8000';
+const addr = '84.201.147.95';
 
 
 class Main extends Component {

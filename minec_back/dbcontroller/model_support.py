@@ -9,10 +9,35 @@ USED_MODELS = [Company, Alive, TaxBase, EmployeeNum, BaseIncome, OKVED]
 
 
 def create_ASK_DICT():
-    ASK_DICT = dict()
+    ASK_DICT = create_UpdDate()
     for model in USED_MODELS:
         fill_ASK_DICT_with_model(model, ASK_DICT)
     return ASK_DICT
+
+
+def create_UpdDate():
+    return {'upd_date': {
+        'table': 'UPD',
+        'human': 'Дата обновления данных',
+        'machine': 'upd_date',
+        'description': 'Это поле едино для многих внутренних таблиц и отвечает за момент обновления данных.',
+        'type': 'date',
+        'sign': [
+            {'value': 'range', 'name': 'одно из'},
+            {'value': 'eq', 'name': '='},
+            {'value': 'gt', 'name': '>'},
+            {'value': 'lt', 'name': '<'},
+            {'value': 'gte', 'name': '>='},
+            {'value': 'lte', 'name': '<='},
+        ],
+        'suggestions': [],
+        'upd_filter': [
+            'taxbase__upd_date',
+            'baseincome__upd_date',
+            'employeenum__upd_date',
+            'okved__upd_date',
+        ]
+    }}
 
 
 def create_base_to_fields_dicts():
