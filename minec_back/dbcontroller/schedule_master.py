@@ -50,11 +50,15 @@ def master(steps=None):
     page_types = sorted(list(PAGE_TYPES.keys()), key=lambda x: PAGE_TYPES[x]['priority'], reverse=True)
     upd_date = datetime.datetime.now().date()
 
-    LoadDates(date=upd_date).save()
+    if LoadDates.objects.filter(date=upd_date).count() == 0:
+        LoadDates(date=upd_date).save()
 
     for base in page_types:
+        tries = 0
         while not _try_update_base(base, steps=steps, upd_date=upd_date):
-            pass
+            tries += 1
+            if tries > 10:
+                break
 
 
 def _try_update_base(base, steps=None, upd_date=None):
