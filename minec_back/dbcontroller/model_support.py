@@ -2,7 +2,7 @@ from django.db import models
 from dbcontroller.models import \
     TaxBase, Company, Alive, EmployeeNum, BaseIncome, OKVED
 from dbcontroller.models_constants import *
-from dbcontroller.description_dict import get_description
+from dbcontroller.description_dict import get_description, get_type_description
 
 
 USED_MODELS = [Company, Alive, TaxBase, EmployeeNum, BaseIncome, OKVED]
@@ -20,7 +20,12 @@ def create_UpdDate():
         'table': 'UPD',
         'human': 'Дата обновления данных',
         'machine': 'upd_date',
-        'description': 'Это поле едино для многих внутренних таблиц и отвечает за момент обновления данных.',
+        'description': {
+            'name_description': 'Это поле едино для многих внутренних '
+                                'таблиц и отвечает за момент обновления данных. '
+                                'Нажмите кнопку справки, чтобы получить возможные значения.',
+            'type_description': get_type_description(models.DateField()),
+        },
         'type': 'date',
         'sign': [
             {'value': 'range', 'name': 'одно из'},
