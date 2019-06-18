@@ -47,10 +47,10 @@ PAGE_TYPES ={
 
 
 def master(steps=None):
-    page_types = sorted(list(PAGE_TYPES.keys()), key=lambda x: PAGE_TYPES[x]['priority'])
+    page_types = sorted(list(PAGE_TYPES.keys()), key=lambda x: PAGE_TYPES[x]['priority'], reverse=True)
     upd_date = datetime.datetime.now().date()
 
-    # LoadDates(date=upd_date).save()
+    LoadDates(date=upd_date).save()
 
     for base in page_types:
         while not _try_update_base(base, steps=steps, upd_date=upd_date):
