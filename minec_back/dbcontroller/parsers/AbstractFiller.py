@@ -42,10 +42,10 @@ class AbstractFiller:
                 except:
                     everything_goes_well = False
             if len(to_create) > self.MAX_SIZE_TO_CREATE:
-                self.cur_model.objects.bulk_create(to_create, batch_size=500)
+                self.save(to_create)
                 to_create = []
         if len(to_create) != 0:
-            self.cur_model.objects.bulk_create(to_create, batch_size=500)
+            self.save(to_create)
         return everything_goes_well
 
     def parse_file(self, filename):
@@ -71,6 +71,21 @@ class AbstractFiller:
                 pass
         # self.cur_model.objects.bulk_create(to_create)
         return to_create
+
+
+    def save(self, to_create):
+        if len(to_create) == 0:
+            return
+
+        try:
+            self.cur_model.objects.bulk_create(to_create, batch_size=500)
+            return
+        except:
+            for item in to_create:
+                try:
+                    item.save()
+                except
+                    pass
 
     @staticmethod
     def get_inn(item):
