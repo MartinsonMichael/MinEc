@@ -117,7 +117,10 @@ def process_groupby(options, q):
 def process_aggregations(options, q):
     for key, value in options.items():
         if key[:6] == 'groupb':
-            return process_aggregations_groupped_case(options, q)
+            if value[0] == 'upd_date':
+                continue
+            else:
+                return process_aggregations_groupped_case(options, q)
     return process_aggregations_not_groupped_case(options, q)
 
 
