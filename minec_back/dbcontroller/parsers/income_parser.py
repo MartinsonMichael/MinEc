@@ -15,7 +15,7 @@ class IncomeParser(AbstractFiller):
         item = item.find('СведДохРасх')
         income_item = models.BaseIncome(
             _company=company,
-            _date=self.upd_date,
+            upd_date=self.upd_date,
             income=item['СумДоход'],
             outcome=item['СумРасход'],
         )

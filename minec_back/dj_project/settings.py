@@ -85,8 +85,6 @@ DATABASES = {
     #     'NAME': 'base2',
     #     'USER': 'michael2',
     #     'PASSWORD': '123',
-    #     'PASSWORD': '123',
-    #     'PASSWORD': '123',
     #     'HOST': 'localhost',
     #     'PORT': '5432',
     # }

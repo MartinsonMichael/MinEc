@@ -21,7 +21,7 @@ class TaxParser(AbstractFiller):
 
         tax_item = models.TaxBase(
             _company=company,
-            _date=self.upd_date,
+            upd_date=self.upd_date,
             date=self._adding_date,
         )
 

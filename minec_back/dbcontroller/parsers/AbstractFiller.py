@@ -57,7 +57,9 @@ class AbstractFiller:
             try:
                 inn = AbstractFiller.get_inn(item)
                 if inn is None:
-                    continue
+                    print('no inn')
+                    print(item.prettify())
+                    break
                 model_item = self.parse_item(inn, item)
                 if model_item is None:
                     continue

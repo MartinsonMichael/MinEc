@@ -71,6 +71,7 @@ def _try_update_base(base, steps=None, upd_date=None):
 
     # load data
     if q.filter(type='load').filter(zip_file_name=page_type['url_name']).count() == 0:
+        print('load')
         if _load_data(page_type['url_name'], zip_file_name):
             schedule_item = ScheduleTable(
                 date=datetime.datetime.now().date(),
@@ -83,6 +84,7 @@ def _try_update_base(base, steps=None, upd_date=None):
 
     # unzip
     if q.filter(type='unzip').filter(zip_file_name=page_type['url_name']).count() == 0:
+        print('unzip')
         if _extract_data(zip_file_name, folder_name):
             schedule_item = ScheduleTable(
                 date=datetime.datetime.now().date(),
@@ -100,6 +102,7 @@ def _try_update_base(base, steps=None, upd_date=None):
         else:
             return False
 
+    print('start adding')
     q = q.filter(base_name=base_name)
 
     # add
