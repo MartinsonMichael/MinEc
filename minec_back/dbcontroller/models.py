@@ -80,9 +80,6 @@ class OKVED(models.Model):
     okved_code_name = models.TextField(verbose_name='Название ОКВЭД', max_length=160, null=True)
     okved_is_prime = models.BooleanField(verbose_name='Основное ОКВЭД?', null=True)
 
-    class Meta:
-        unique_together = ('okved_code', '_company')
-
 
 class EmployeeNum(models.Model):
     _company = models.OneToOneField(Company, on_delete=models.CASCADE)
