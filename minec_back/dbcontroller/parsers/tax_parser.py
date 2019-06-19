@@ -10,19 +10,16 @@ class TaxParser(AbstractFiller):
         super(TaxParser, self).__init__(cur_model=models.TaxBase, steps=steps, upd_date=upd_date)
         self.TAX_DICT = model_support.create_TAX_DICT()
 
-        # set add date to me even
-        self._adding_date = datetime.datetime.now().date()
-        if datetime.datetime.now().date().day % 2 == 1:
-            self._adding_date = datetime.datetime.now().date() + datetime.timedelta(days=1)
-
     def parse_item(self, inn, item=None):
+
+        if models.Company.objects.filter(inn=inn).count() == 0:
+            return None
 
         company = models.Company.objects.filter(inn=inn)[0]
 
         tax_item = models.TaxBase(
             _company=company,
             upd_date=self.upd_date,
-            date=self._adding_date,
         )
 
         for tax in item.find_all('СвУплСумНал'):
