@@ -105,7 +105,8 @@ def process_groupby(options, q):
             if value[0] != 'upd_date':
                 values.append(value[0])
             else:
-                values.extend(ASK_DICT['upd_date']['upd_filter'])
+                q = process_filter_upd_date('upd_filter___eq___19.06.2019___', q)
+                # values.extend(ASK_DICT['upd_date']['upd_filter'])
     print('gb :', values)
     if len(values) > 0:
         q = q.values(*values)
