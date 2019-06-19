@@ -84,7 +84,7 @@ class AbstractFiller:
             for item in to_create:
                 try:
                     item.save()
-                except
+                except:
                     pass
 
     @staticmethod
