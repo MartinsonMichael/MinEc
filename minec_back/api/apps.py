@@ -68,13 +68,30 @@ def perform_api(request):
     if Errors.too_large in table_err:
         query = query[:10]
 
-    try:
-        header = list(query[0].keys())
-        table_header = json.dumps(header)
-        table_human_header = json.dumps(create_human_headers(header))
-        table_body = json.dumps(list(query), default=my_ser)
-    except:
-        table_err.append(Errors.json_dump)
+    wasUpdGr = False
+    for key, value in options.items():
+        if key[:6] == 'groupb':
+            if value[0] == 'upd_date':
+                wasUpdGr = True
+
+    if wasUpdGr:
+        try:
+            header = list(query[0].keys()) + ['upd_date']
+            table_header = json.dumps(header)
+            table_human_header = json.dumps(create_human_headers(header) + ['Дата обновления'])
+            query = list(query)
+            query = [x.update({'upd_date': '19.06.2019'}) for x in query]
+            table_body = json.dumps(list(query), default=my_ser)
+        except:
+            table_err.append(Errors.json_dump)
+    else:
+        try:
+            header = list(query[0].keys())
+            table_header = json.dumps(header)
+            table_human_header = json.dumps(create_human_headers(header))
+            table_body = json.dumps(list(query), default=my_ser)
+        except:
+            table_err.append(Errors.json_dump)
 
     table_err = [str(x) for x in table_err]
     print(query[:4])
