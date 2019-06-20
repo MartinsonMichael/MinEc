@@ -15,6 +15,7 @@ import { GroupbyContorll } from './groupper';
 
 //const addr = '127.0.0.1:8000';
 const addr = '84.201.147.95';
+//const addr = '0.0.0.0';
 
 
 class Main extends Component {

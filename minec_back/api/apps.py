@@ -1,8 +1,8 @@
 from django.apps import AppConfig
-from django.http import HttpResponse, StreamingHttpResponse
+from django.http import HttpResponse, StreamingHttpResponse, FileResponse
 import json
 import datetime
-from .qs_peroforming import create_human_headers, process_options
+from .qs_peroforming import create_human_headers, process_options, process_options_qs_file
 from djqscsv import write_csv
 from enum import Enum, unique
 from django.utils.encoding import smart_str
@@ -11,7 +11,7 @@ import os
 @unique
 class Errors(Enum):
     parse = 0
-    zero =  1
+    zero = 1
     too_large = 2
     json_dump = 3
 
@@ -96,7 +96,7 @@ def perform_api(request):
             table_err.append(Errors.json_dump)
 
     table_err = [str(x) for x in table_err]
-    print(query[:4])
+    # print(query[:4])
     print('err :', table_err)
     print('query len :', len(query) if query is not None else 'None')
 
@@ -111,12 +111,15 @@ def perform_api(request):
 
 def sent_q_as_file(request):
     options = dict(request.GET)
-    query = process_options(options)
+    query = process_options_qs_file(options)
     file_name = "file_" + str(datetime.datetime.now()).replace(' ', '_') + ".csv"
 
-    write_csv(query, open(file_name, 'wb', 777))
+    write_csv(query, open(file_name, 'wb'))
 
     print(f'save {file_name}')
+
+    # response = FileResponse(open(file_name))
+    # response["Access-Control-Allow-Origin"] = '*'
 
     response = StreamingHttpResponse(open(file_name, 'rb').readlines(), content_type="text/csv")
     response["Access-Control-Allow-Origin"] = '*'

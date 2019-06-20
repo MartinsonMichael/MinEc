@@ -171,6 +171,18 @@ def process_options(options):
     return create_value_list(options, q)
 
 
+def process_options_qs_file(options):
+    global ASK_DICT, b2f, f2b
+    if ASK_DICT is None or b2f is None or f2b is None:
+        ASK_DICT = create_ASK_DICT()
+        b2f, f2b = create_base_to_fields_dicts()
+    q = Company.objects
+    q = process_filters(options, q)
+    q = process_groupby(options, q)
+    q = process_aggregations(options, q)
+    return q
+
+
 def create_value_list(options, q):
     if isinstance(q, list):
         return q
