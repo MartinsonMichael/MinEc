@@ -78,7 +78,7 @@ def perform_api(request):
         try:
             header = list(query[0].keys()) + ['upd_date']
             table_header = json.dumps(header)
-            table_human_header = json.dumps(create_human_headers(header) + ['Дата обновления'])
+            table_human_header = json.dumps(create_human_headers(header))
             query = list(query)
             print(query)
             query = [{**x, **{'upd_date': '19.06.2019'}} for x in query]
