@@ -81,7 +81,7 @@ def perform_api(request):
             table_human_header = json.dumps(create_human_headers(header) + ['Дата обновления'])
             query = list(query)
             print(query)
-            query = [x.update({'upd_date': '19.06.2019'}) for x in query]
+            query = [{**x, **{'upd_date': '19.06.2019'}} for x in query]
             print(query)
             table_body = json.dumps(query, default=my_ser)
         except:
