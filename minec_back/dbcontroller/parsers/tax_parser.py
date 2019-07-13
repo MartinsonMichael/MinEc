@@ -19,7 +19,6 @@ class TaxParser(AbstractFiller):
 
         tax_item = models.TaxBase(
             _company=company,
-            upd_date=self.upd_date,
         )
 
         for tax in item.find_all('СвУплСумНал'):

@@ -7,14 +7,12 @@ from dbcontroller import models
 
 class AbstractFiller:
 
-    def __init__(self, cur_model, steps=None, upd_date=None):
+    def __init__(self, cur_model, upd_date, steps=None):
         self.upd_date = upd_date
-        if self.upd_date is None:
-            self.upd_date = datetime.datetime.now().date()
         self.cur_model = cur_model
         self.steps = steps
         self.base_name = cur_model.__name__
-        self.MAX_SIZE_TO_CREATE = 5 * 10**3
+        self.MAX_SIZE_TO_CREATE = 15 * 10**3
 
     def parse_folder(self, folder_name):
         q_add = models.ScheduleTable.objects\
@@ -46,7 +44,11 @@ class AbstractFiller:
                 to_create = []
         if len(to_create) != 0:
             self.save(to_create)
+        self.on_folder_end()
         return everything_goes_well
+
+    def on_folder_end(self):
+        pass
 
     def parse_file(self, filename):
         print(f'start parse xml {self.cur_model.__name__} {filename}')
@@ -57,9 +59,9 @@ class AbstractFiller:
             try:
                 inn = AbstractFiller.get_inn(item)
                 if inn is None:
-                    print('no inn')
+                    print('Error: no inn')
                     print(item.prettify())
-                    break
+                    continue
                 model_item = self.parse_item(inn, item)
                 if model_item is None:
                     continue
@@ -67,23 +69,41 @@ class AbstractFiller:
                     to_create.extend(model_item)
                 else:
                     to_create.append(model_item)
-            finally:
-                pass
-        # self.cur_model.objects.bulk_create(to_create)
+            except:
+                print('Error while processing')
+                print(item.prettify())
         return to_create
-
 
     def save(self, to_create):
         if len(to_create) == 0:
             return
-
         try:
-            self.cur_model.objects.bulk_create(to_create, batch_size=500)
+            MAX_BATCH = 1000
+            for i in range(0, len(to_create), MAX_BATCH):
+                _from = i * MAX_BATCH
+                _to = (i + 1) * MAX_BATCH
+                try:
+                    self.cur_model.objects.bulk_create(to_create[_from: _to])
+                except:
+                    for j in range(10):
+                        _from2 = _from + j * MAX_BATCH / 10
+                        _to2 = _from + (j + 1) * MAX_BATCH / 10
+                        try:
+                            self.cur_model.objects.bulk_create(to_create[_from2: _to2])
+                        except:
+                            for item in to_create[_from2: _to2]:
+                                item.save()
             return
         except:
             for item in to_create:
                 try:
                     item.save()
+                except:
+                    pass
+        finally:
+            for item in to_create:
+                try:
+                    item.upd_date.add(self.upd_date)
                 except:
                     pass
 

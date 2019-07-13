@@ -18,7 +18,6 @@ class OkvedParser(AbstractFiller):
         for okved in item.find('СвОКВЭД').findAll('СвОКВЭДОсн'):
             buf.append(models.OKVED(
                 _company=company,
-                upd_date=self.upd_date,
                 okved_code=okved['КодОКВЭД'],
                 okved_code_name=okved['НаимОКВЭД'],
                 okved_is_prime=True,
@@ -27,7 +26,6 @@ class OkvedParser(AbstractFiller):
         for okved in item.find('СвОКВЭД').findAll('СвОКВЭДДоп'):
             buf.append(models.OKVED(
                 _company=company,
-                upd_date=self.upd_date,
                 okved_code=okved['КодОКВЭД'],
                 okved_code_name=okved['НаимОКВЭД'],
                 okved_is_prime=False,

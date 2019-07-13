@@ -12,12 +12,16 @@ class CompanyMainParser(AbstractFiller):
             upd_date=upd_date
         )
         self.ASK_DICT = model_support.create_ASK_DICT()
+        self.old_companies = []
 
     def parse_item(self, inn, item=None):
         owner_name = None
         short_title = None
         is_ip = None
-        company_category = self.ASK_DICT['company_category']['machine_mapper'][int(item['КатСубМСП'])]
+
+        company_category = self.ASK_DICT['company__company_category']['machine_mapper'][
+            int(item['КатСубМСП'])
+        ]
 
         if item.find('ИПВклМСП') is not None:
             main_part = item.find('ИПВклМСП')
@@ -37,6 +41,7 @@ class CompanyMainParser(AbstractFiller):
                 short_title = None
 
         if models.Company.objects.filter(inn=inn).count() > 0:
+            self.old_companies.append(inn)
             return None
 
         location_code = int(item.find('СведМН')['КодРегион'])
@@ -51,3 +56,7 @@ class CompanyMainParser(AbstractFiller):
             federal_name=models.REGION_TO_FEDERAL[models.REGION_TYPES[location_code]],
         )
         return company
+
+    def on_folder_end(self):
+        for company in models.Company.objects.filter(inn__in=self.old_companies):
+            company.upd_date.add(self.upd_date)

@@ -17,7 +17,6 @@ class EmployeesNumParser(AbstractFiller):
 
         emp_item = models.EmployeeNum(
             _company=company,
-            upd_date=self.upd_date,
             employee_num=employee_num,
         )
         # emp_item.save()

@@ -4,9 +4,14 @@ from dbcontroller.models_constants import *
 
 class LoadDates(models.Model):
     date = models.DateField(
-        verbose_name="Даты обновлений",
+        verbose_name="Дата обновления",
         null=False
     )
+
+
+class ThreadStore(models.Model):
+    th_type = models.TextField(max_length=10)
+    th_pid = models.IntegerField()
 
 
 class ScheduleTable(models.Model):
@@ -31,6 +36,7 @@ class ScheduleTable(models.Model):
 class Company(models.Model):
     # primary key
     inn = models.TextField("ИНН", max_length=20, null=True, unique=True)
+    upd_date = models.ManyToManyField(LoadDates)
 
     # main fields
     is_ip = models.BooleanField("является ИП", null=True)
@@ -58,6 +64,7 @@ class Company(models.Model):
         max_length=50,
         choices=[(x, y) for x, y in FEDERAL_TYPES.items()],
         default="НЕИЗВЕСТНО",
+        null=True,
     )
 
 
@@ -75,21 +82,21 @@ class Alive(models.Model):
 
 class OKVED(models.Model):
     _company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    upd_date = models.DateField(TECH_FILED, null=False)
+    upd_date = models.ManyToManyField(LoadDates)
     okved_code = models.TextField(verbose_name='Код ОКВЭД', max_length=21, null=True)
     okved_code_name = models.TextField(verbose_name='Название ОКВЭД', max_length=160, null=True)
     okved_is_prime = models.BooleanField(verbose_name='Основное ОКВЭД?', null=True)
 
 
 class EmployeeNum(models.Model):
-    _company = models.OneToOneField(Company, on_delete=models.CASCADE)
-    upd_date = models.DateField(TECH_FILED, null=False)
+    _company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    upd_date = models.ManyToManyField(LoadDates)
     employee_num = models.IntegerField("количество работников", null=True)
 
 
 class TaxBase(models.Model):
-    _company = models.OneToOneField(Company, on_delete=models.CASCADE)
-    upd_date = models.DateField(TECH_FILED, null=False)
+    _company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    upd_date = models.ManyToManyField(LoadDates)
 
     tax_atribute_0 = models.FloatField(
         verbose_name='Задолженность и перерасчеты по ОТМЕНЕННЫМ НАЛОГАМ'
@@ -147,8 +154,8 @@ class TaxBase(models.Model):
 
 
 class BaseIncome(models.Model):
-    _company = models.OneToOneField(Company, on_delete=models.CASCADE)
-    upd_date = models.DateField(TECH_FILED, null=False)
+    _company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    upd_date = models.ManyToManyField(LoadDates)
     income = models.FloatField('доход')
     outcome = models.FloatField('расход')
 

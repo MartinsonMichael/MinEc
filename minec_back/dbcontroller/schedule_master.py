@@ -3,14 +3,18 @@ import datetime
 from bs4 import BeautifulSoup
 import urllib.request
 import requests
-import os
 import zipfile
 from .models import Company, EmployeeNum, BaseIncome, TaxBase, OKVED, LoadDates
+from .models import ThreadStore
 
 from dbcontroller import parsers
+import threading
+import os
+import signal
+import time
 
 BUFFER_DIR = './buffer/'
-PAGE_TYPES ={
+PAGE_TYPES = {
     Company: {
         'name': 'Единый реестр субъектов малого и среднего предпринимательства',
         'url_name': '7707329152-rsmp',
@@ -46,16 +50,73 @@ PAGE_TYPES ={
 }
 
 
-def master(steps=None):
-    page_types = sorted(list(PAGE_TYPES.keys()), key=lambda x: PAGE_TYPES[x]['priority'], reverse=True)
-    upd_date = datetime.datetime.now().date()
+def launch_main_cycle():
+    if ThreadStore.objects.filter(th_type='extra').count() > 0:
+        main_pid = ThreadStore.objects.filter(th_type='main')[0].values
+        os.kill(main_pid, signal.SIGTERM)
 
-    if LoadDates.objects.filter(date=upd_date).count() == 0:
-        LoadDates(date=upd_date).save()
+    threading.enumerate()
 
-    for _ in range(3):
-        for base in page_types:
-            _try_update_base(base, steps=steps, upd_date=upd_date)
+
+def relaunch_main():
+    if ThreadStore.objects.filter(th_type='main').count() > 0:
+        main_pid = ThreadStore.objects.filter(th_type='main').values('th_pid')
+        for pid in main_pid:
+            os.kill(pid, signal.SIGTERM)
+    threading.Thread(
+        group=None,
+        target=__main_loop,
+        daemon=False,
+    ).start()
+
+
+def __main_loop():
+    ThreadStore(th_type='main', th_pid=threading.current_thread().ident).save()
+    while True:
+        master()
+        time.sleep(60 * 60 * 24 * 1)
+
+
+def master(steps=None, force=False, times=2):
+    upd_date_date = datetime.datetime.now().date()
+    if LoadDates.objects.filter(date=upd_date_date).count() == 0:
+        date_item = LoadDates(date=upd_date_date)
+        date_item.save()
+    else:
+        date_item = LoadDates.objects.order_by('-date')[0]
+    if LoadDates.objects.count() >= 2:
+        date_pre_last = LoadDates.objects.order_by('-date')[1]
+    else:
+        force = True
+        date_pre_last = LoadDates.objects.order_by('-date')[0]
+
+    to_upd = get_updated_base_list(force)
+    not_today = [x for x in PAGE_TYPES.keys() if x not in to_upd]
+
+    if len(to_upd) == 0:
+        return
+
+    if Company in to_upd:
+        to_upd.remove(Company)
+        for _ in range(times):
+            _try_update_base(Company, steps=steps, upd_date=date_item)
+
+    for _ in range(times):
+        for base in to_upd:
+            _try_update_base(base, steps=steps, upd_date=date_item)
+
+    for base in not_today:
+        q = base.objects.filter(upd_date=date_pre_last)
+        if q.count() > 0:
+            q.upd_date.add(date_item)
+
+
+def get_updated_base_list(force=False):
+    upd = []
+    for base in PAGE_TYPES.keys():
+        if force or has_got_update(base):
+            upd.append(base)
+    return upd
 
 
 def _try_update_base(base, steps=None, upd_date=None):
@@ -68,6 +129,9 @@ def _try_update_base(base, steps=None, upd_date=None):
     page_type = PAGE_TYPES[base]
     zip_file_name = os.path.join(BUFFER_DIR, page_type['url_name'] + '_data_zip.zip')
     folder_name = os.path.join(BUFFER_DIR, page_type['url_name'] + '_data_folder')
+
+    if q.filter(type='done').filter(base_name=base_name).count() > 0:
+        return True
 
     # load data
     if q.filter(type='load').filter(zip_file_name=page_type['url_name']).count() == 0:
@@ -119,11 +183,23 @@ def _try_update_base(base, steps=None, upd_date=None):
     return q.filter(type='done').count() > 0
 
 
+def has_got_update(base):
+    page_type = PAGE_TYPES[base]
+    data_name = "www.nalog.ru/opendata/" + page_type['url_name']
+    html = requests.get("http://" + data_name).text
+    soup = BeautifulSoup(html, 'html.parser')
+
+    date_text = str(soup.find(text="Дата актуальности").parent.parent)
+    return datetime.datetime.now().date() > datetime.datetime.strptime(
+        BeautifulSoup(date_text, 'html.parser').find('tr').findAll('td')[-1].text, '%d.%m.%Y')
+
+
 def _load_data(url_name, filename):
     try:
         data_name = "www.nalog.ru/opendata/" + url_name
         html = requests.get("http://" + data_name).text
         soup = BeautifulSoup(html, 'html.parser')
+
         part_with_data_link = str(soup.find(text="Гиперссылка (URL) на набор").parent.parent)
         data_link = BeautifulSoup(part_with_data_link, 'html.parser').find('a').get('href')
 

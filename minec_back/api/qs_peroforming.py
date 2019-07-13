@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from dbcontroller.models import Company
+from dbcontroller.models import LoadDates
 from django.db.models import Q
 from dbcontroller.model_support import create_ASK_DICT, create_base_to_fields_dicts
 import datetime
@@ -77,24 +77,11 @@ def process_single_filter(filter_str, q):
     return q
 
 
-def process_filter_upd_date(filter_str, q):
-    filter_str = filter_str.split('___')
-    prop = filter_str[0]
-    sign = filter_str[1]
-    value = filter_str[2:]
-    for x in ASK_DICT['upd_date']['upd_filter']:
-        q = process_single_filter('___'.join([x, sign, *value]), q)
-    return q
-
-
 def process_filters(options, q):
     for key, value in options.items():
         if key[:6] != 'filter':
             continue
-        if value[0].split('___')[0] == 'upd_date':
-            q = process_filter_upd_date(value[0], q)
-        else:
-            q = process_single_filter(value[0], q)
+        q = process_single_filter(value[0], q)
     return q
 
 
@@ -102,12 +89,7 @@ def process_groupby(options, q):
     values = []
     for key, value in options.items():
         if key[:6] == 'groupb':
-            if value[0] != 'upd_date':
-                values.append(value[0])
-            else:
-                pass
-                # q = process_filter_upd_date('upd_filter___eq___19.06.2019___', q)
-                # values.extend(ASK_DICT['upd_date']['upd_filter'])
+            values.append(value[0])
     print('gb :', values)
     if len(values) > 0:
         q = q.values(*values)
@@ -117,10 +99,7 @@ def process_groupby(options, q):
 def process_aggregations(options, q):
     for key, value in options.items():
         if key[:6] == 'groupb':
-            if value[0] == 'upd_date':
-                continue
-            else:
-                return process_aggregations_groupped_case(options, q)
+            return process_aggregations_groupped_case(options, q)
     return process_aggregations_not_groupped_case(options, q)
 
 
@@ -163,7 +142,7 @@ def process_options(options):
     if ASK_DICT is None or b2f is None or f2b is None:
         ASK_DICT = create_ASK_DICT()
         b2f, f2b = create_base_to_fields_dicts()
-    q = Company.objects
+    q = LoadDates.objects
     q = process_filters(options, q)
     q = process_groupby(options, q)
     q = process_aggregations(options, q)
@@ -176,37 +155,56 @@ def process_options_qs_file(options):
     if ASK_DICT is None or b2f is None or f2b is None:
         ASK_DICT = create_ASK_DICT()
         b2f, f2b = create_base_to_fields_dicts()
-    q = Company.objects
+    q = LoadDates.objects
     q = process_filters(options, q)
     q = process_groupby(options, q)
     q = process_aggregations(options, q)
     return q
 
 
-def create_value_list(options, q):
-    if isinstance(q, list):
+def ai_ordering(q):
+    if len(q) == 0:
         return q
-    if isinstance(q, dict):
-        return [q]
+    sample = q[0]
+    sort_key = []
+    if 'date' in sample.keys():
+        sort_key.append('date')
+    for key in sample.keys():
+        if key in ASK_DICT.keys():
+            if ASK_DICT[key]['type'] == 'multy':
+                sort_key.append(key)
+    q.sort(key=lambda x: tuple(x[i] for i in sort_key))
+    return q
 
-    for key, value in options.items():
-        if not key.startswith('filter'):
-            print('HERE!')
-            return list(q)
 
-    fields = []
-    tables = []
-    for key, value in options.items():
-        if key.startswith('filter'):
-            tables.append(f2b[value[0].split('___')[0]])
+def create_value_list(options, q):
+    def make_list():
+        if isinstance(q, list):
+            return q
+        if isinstance(q, dict):
+            return [q]
 
-    tables = list(set(tables) - set(['Company']))
-    for table in ['Company'] + tables:
-        fields.extend(b2f[table])
+        for key, value in options.items():
+            if not key.startswith('filter'):
+                print('HERE!')
+                return list(q)
 
-    print('fields we need : ', fields)
-    return q.values(*fields)
-    # return q.values()
+        fields = []
+        tables = []
+        for key, value in options.items():
+            if key.startswith('filter'):
+                tables.append(f2b[value[0].split('___')[0]])
+
+        tables = list(set(tables) - set(['Company']))
+        for table in ['Company'] + tables:
+            fields.extend(b2f[table])
+
+        print('fields we need : ', fields)
+        return q.values(*fields)
+        # return q.values()
+    q = make_list()
+    q = ai_ordering(q)
+    return q
 
 
 def create_human_headers(header):
