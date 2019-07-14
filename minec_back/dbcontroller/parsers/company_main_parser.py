@@ -58,5 +58,6 @@ class CompanyMainParser(AbstractFiller):
         return company
 
     def on_folder_end(self):
-        for company in models.Company.objects.filter(inn__in=self.old_companies):
-            company.upd_date.add(self.upd_date)
+        self.get_upd_date_set().add(
+            *models.Company.objects.filter(inn__in=self.old_companies)
+        )

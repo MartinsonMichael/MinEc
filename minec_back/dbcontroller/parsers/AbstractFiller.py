@@ -84,28 +84,34 @@ class AbstractFiller:
                 _to = (i + 1) * MAX_BATCH
                 try:
                     self.cur_model.objects.bulk_create(to_create[_from: _to])
+                    self.add_upd_date(to_create[_from: _to])
                 except:
                     for j in range(10):
                         _from2 = _from + j * MAX_BATCH / 10
                         _to2 = _from + (j + 1) * MAX_BATCH / 10
                         try:
                             self.cur_model.objects.bulk_create(to_create[_from2: _to2])
+                            self.add_upd_date(to_create[_from2: _to2])
                         except:
                             for item in to_create[_from2: _to2]:
                                 item.save()
+                                self.add_upd_date([item])
             return
         except:
+            to_add = []
             for item in to_create:
                 try:
                     item.save()
+                    to_add.append(item)
                 except:
                     pass
-        finally:
-            for item in to_create:
-                try:
-                    item.upd_date.add(self.upd_date)
-                except:
-                    pass
+            self.add_upd_date(to_add)
+
+    def get_upd_date_set(self):
+        return getattr(self.upd_date, self.cur_model.__name__.lower() + '_set')
+
+    def add_upd_date(self, to_create):
+        self.get_upd_date_set().add(*to_create)
 
     @staticmethod
     def get_inn(item):

@@ -77,7 +77,7 @@ def __main_loop():
         time.sleep(60 * 60 * 24 * 1)
 
 
-def master(steps=None, force=False, times=2):
+def master(steps=None, force=False, times=2, forced_upd_date=None):
     upd_date_date = datetime.datetime.now().date()
     if LoadDates.objects.filter(date=upd_date_date).count() == 0:
         date_item = LoadDates(date=upd_date_date)
@@ -89,6 +89,12 @@ def master(steps=None, force=False, times=2):
     else:
         force = True
         date_pre_last = LoadDates.objects.order_by('-date')[0]
+
+    if forced_upd_date is not None:
+        if type(forced_upd_date) == type("string"):
+            forced_upd_date = datetime.datetime.strptime(forced_upd_date, '%d.%m.%Y')
+        if LoadDates.objects.filter(date=forced_upd_date).count() > 0:
+            date_item = LoadDates.objects.filter(date=forced_upd_date)[0]
 
     to_upd = get_updated_base_list(force)
     not_today = [x for x in PAGE_TYPES.keys() if x not in to_upd]
@@ -119,9 +125,7 @@ def get_updated_base_list(force=False):
     return upd
 
 
-def _try_update_base(base, steps=None, upd_date=None):
-    if upd_date is None:
-        upd_date = datetime.datetime.now().date()
+def _try_update_base(base, upd_date, steps=None):
     q = ScheduleTable.objects.\
         filter(date__gte=datetime.datetime.now().date() - datetime.timedelta(days=14))
 
