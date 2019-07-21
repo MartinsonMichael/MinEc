@@ -40,10 +40,6 @@ class CompanyMainParser(AbstractFiller):
             else:
                 short_title = None
 
-        if models.Company.objects.filter(inn=inn).count() > 0:
-            self.old_companies.append(inn)
-            return None
-
         location_code = int(item.find('СведМН')['КодРегион'])
         company = models.Company(
             inn=inn,
@@ -56,8 +52,3 @@ class CompanyMainParser(AbstractFiller):
             federal_name=models.REGION_TO_FEDERAL[models.REGION_TYPES[location_code]],
         )
         return company
-
-    def on_folder_end(self):
-        self.get_upd_date_set().add(
-            *models.Company.objects.filter(inn__in=self.old_companies)
-        )

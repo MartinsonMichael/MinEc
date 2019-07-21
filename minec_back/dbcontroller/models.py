@@ -9,6 +9,10 @@ class LoadDates(models.Model):
     )
 
 
+class InnStore(models.Model):
+    inn = models.TextField("ИНН", max_length=20, null=False, unique=True)
+
+
 class ThreadStore(models.Model):
     th_type = models.TextField(max_length=10)
     th_pid = models.IntegerField()
@@ -34,8 +38,7 @@ class ScheduleTable(models.Model):
 
 
 class Company(models.Model):
-    # primary key
-    inn = models.TextField("ИНН", max_length=20, null=True, unique=True)
+    _inn = models.ForeignKey(InnStore, on_delete=models.CASCADE)
     upd_date = models.ManyToManyField(LoadDates)
 
     # main fields
@@ -56,7 +59,7 @@ class Company(models.Model):
     region_name = models.TextField(
         "Название региона",
         choices=[(x, y) for (x, y) in REGION_TYPES.items()],
-        default=REGION_TYPES[0],
+        default="НЕИЗВЕСТНО",
         null=True,
     )
     federal_name = models.TextField(
@@ -69,7 +72,7 @@ class Company(models.Model):
 
 
 class Alive(models.Model):
-    _company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    _inn = models.ForeignKey(InnStore, on_delete=models.CASCADE)
     date_create = models.DateField("дата создания компании", null=True)
     # date_add_to_base = models.DateField("дата добавления в базу", null=True)
     date_disappear = models.DateField("дата прекращения существования", null=True)
@@ -81,7 +84,7 @@ class Alive(models.Model):
 
 
 class OKVED(models.Model):
-    _company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    _inn = models.ForeignKey(InnStore, on_delete=models.CASCADE)
     upd_date = models.ManyToManyField(LoadDates)
     okved_code = models.TextField(verbose_name='Код ОКВЭД', max_length=21, null=True)
     okved_code_name = models.TextField(verbose_name='Название ОКВЭД', max_length=160, null=True)
@@ -89,13 +92,13 @@ class OKVED(models.Model):
 
 
 class EmployeeNum(models.Model):
-    _company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    _inn = models.ForeignKey(InnStore, on_delete=models.CASCADE)
     upd_date = models.ManyToManyField(LoadDates)
     employee_num = models.IntegerField("количество работников", null=True)
 
 
 class TaxBase(models.Model):
-    _company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    _inn = models.ForeignKey(InnStore, on_delete=models.CASCADE)
     upd_date = models.ManyToManyField(LoadDates)
 
     tax_atribute_0 = models.FloatField(
@@ -154,7 +157,7 @@ class TaxBase(models.Model):
 
 
 class BaseIncome(models.Model):
-    _company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    _inn = models.ForeignKey(InnStore, on_delete=models.CASCADE)
     upd_date = models.ManyToManyField(LoadDates)
     income = models.FloatField('доход')
     outcome = models.FloatField('расход')

@@ -74,7 +74,7 @@ def __main_loop():
     ThreadStore(th_type='main', th_pid=threading.current_thread().ident).save()
     while True:
         master()
-        time.sleep(60 * 60 * 24 * 1)
+        time.sleep(60 * 60 * 24)
 
 
 def master(steps=None, force=False, times=2, forced_upd_date=None):
@@ -91,7 +91,7 @@ def master(steps=None, force=False, times=2, forced_upd_date=None):
         date_pre_last = LoadDates.objects.order_by('-date')[0]
 
     if forced_upd_date is not None:
-        if type(forced_upd_date) == type("string"):
+        if isinstance(forced_upd_date, str):
             forced_upd_date = datetime.datetime.strptime(forced_upd_date, '%d.%m.%Y')
         if LoadDates.objects.filter(date=forced_upd_date).count() > 0:
             date_item = LoadDates.objects.filter(date=forced_upd_date)[0]
@@ -102,11 +102,6 @@ def master(steps=None, force=False, times=2, forced_upd_date=None):
     if len(to_upd) == 0:
         return
 
-    if Company in to_upd:
-        to_upd.remove(Company)
-        for _ in range(times):
-            _try_update_base(Company, steps=steps, upd_date=date_item)
-
     for _ in range(times):
         for base in to_upd:
             _try_update_base(base, steps=steps, upd_date=date_item)
@@ -114,7 +109,7 @@ def master(steps=None, force=False, times=2, forced_upd_date=None):
     for base in not_today:
         q = base.objects.filter(upd_date=date_pre_last)
         if q.count() > 0:
-            q.upd_date.add(date_item)
+            parsers.AbstractFiller(base, date_pre_last).add_upd_date(q)
 
 
 def get_updated_base_list(force=False):

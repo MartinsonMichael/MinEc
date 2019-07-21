@@ -3,6 +3,7 @@ import time
 import os
 import datetime
 from dbcontroller import models
+from multiprocessing import Pool
 
 
 class AbstractFiller:
@@ -44,11 +45,7 @@ class AbstractFiller:
                 to_create = []
         if len(to_create) != 0:
             self.save(to_create)
-        self.on_folder_end()
         return everything_goes_well
-
-    def on_folder_end(self):
-        pass
 
     def parse_file(self, filename):
         print(f'start parse xml {self.cur_model.__name__} {filename}')
@@ -62,7 +59,8 @@ class AbstractFiller:
                     print('Error: no inn')
                     print(item.prettify())
                     continue
-                model_item = self.parse_item(inn, item)
+                inn_item = AbstractFiller.get_inn_element(inn)
+                model_item = self.parse_item(inn_item, item)
                 if model_item is None:
                     continue
                 if isinstance(model_item, list):
@@ -149,5 +147,28 @@ class AbstractFiller:
         print('No inn', item.pretitfy(), sep='\n', end='\n')
         return None
 
+    @staticmethod
+    def get_inn_element(inn):
+        try:
+            return models.InnStore.objects.get(inn=inn)
+        except:
+            inn_item = models.InnStore(inn=inn)
+            inn_item.save()
+            return inn_item
+
     def parse_item(self, inn, item=None):
         return None
+
+    def extract_inn_list(self, folder_name):
+        import pickle
+        inn_list = []
+        for i, xml_file in enumerate(os.listdir(folder_name)):
+            if self.steps is not None and i >= self.steps:
+                break
+            soup = bs4.BeautifulSoup(open(os.path.join(folder_name, xml_file), 'r').read(), 'xml')
+            for item in soup.find_all('Документ'):
+                inn = AbstractFiller.get_inn(item)
+                inn_list.append(inn)
+            if i % 1000 == 999:
+                pickle.dump(inn_list, open(f'inn_list__{self.cur_model.__name__}__{i}', 'wb'))
+        pickle.dump(inn_list, open(f'inn_list__{self.cur_model.__name__}__all', 'wb'))
