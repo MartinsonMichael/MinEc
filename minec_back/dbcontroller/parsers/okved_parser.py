@@ -13,7 +13,7 @@ class OkvedParser(AbstractFiller):
         # prime
         for okved in item.find('СвОКВЭД').findAll('СвОКВЭДОсн'):
             buf.append(models.OKVED(
-                _company=company,
+                _inn=inn,
                 okved_code=okved['КодОКВЭД'],
                 okved_code_name=okved['НаимОКВЭД'],
                 okved_is_prime=True,

@@ -13,7 +13,7 @@ class TaxParser(AbstractFiller):
     def parse_item(self, inn, item=None):
 
         tax_item = models.TaxBase(
-            _company=inn,
+            _inn=inn,
         )
 
         for tax in item.find_all('СвУплСумНал'):
