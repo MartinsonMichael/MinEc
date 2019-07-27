@@ -42,7 +42,7 @@ class CompanyMainParser(AbstractFiller):
 
         location_code = int(item.find('СведМН')['КодРегион'])
         company = models.Company(
-            inn=inn,
+            _inn=inn,
             owner_name=owner_name,
             short_title=short_title,
             is_ip=is_ip,

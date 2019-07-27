@@ -8,13 +8,9 @@ class IncomeParser(AbstractFiller):
         super(IncomeParser, self).__init__(cur_model=models.BaseIncome, steps=steps, upd_date=upd_date)
 
     def parse_item(self, inn, item=None):
-        if models.Company.objects.filter(inn=inn).count() == 0:
-            return None
-        company = models.Company.objects.filter(inn=inn)[0]
-
         item = item.find('СведДохРасх')
         income_item = models.BaseIncome(
-            _company=company,
+            _inn=inn,
             income=item['СумДоход'],
             outcome=item['СумРасход'],
         )

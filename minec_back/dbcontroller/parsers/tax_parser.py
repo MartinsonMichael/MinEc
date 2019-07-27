@@ -12,13 +12,8 @@ class TaxParser(AbstractFiller):
 
     def parse_item(self, inn, item=None):
 
-        if models.Company.objects.filter(inn=inn).count() == 0:
-            return None
-
-        company = models.Company.objects.filter(inn=inn)[0]
-
         tax_item = models.TaxBase(
-            _company=company,
+            _company=inn,
         )
 
         for tax in item.find_all('СвУплСумНал'):

@@ -60,9 +60,12 @@ def launch_main_cycle():
 
 def relaunch_main():
     if ThreadStore.objects.filter(th_type='main').count() > 0:
-        main_pid = ThreadStore.objects.filter(th_type='main').values('th_pid')
+        main_pid = ThreadStore.objects.filter(th_type='main').values()
         for pid in main_pid:
-            os.kill(pid, signal.SIGTERM)
+            try:
+                os.kill(int(pid['th_pid']), signal.SIGTERM)
+            except:
+                pass
     threading.Thread(
         group=None,
         target=__main_loop,
@@ -71,10 +74,12 @@ def relaunch_main():
 
 
 def __main_loop():
-    ThreadStore(th_type='main', th_pid=threading.current_thread().ident).save()
+    ThreadStore(th_type='main', th_pid=os.getpid()).save()
     while True:
-        master()
-        time.sleep(60 * 60 * 24)
+        print('**')
+        time.sleep(2)
+        print('**')
+        master(force=True)
 
 
 def master(steps=None, force=False, times=2, forced_upd_date=None):
@@ -190,7 +195,7 @@ def has_got_update(base):
 
     date_text = str(soup.find(text="Дата актуальности").parent.parent)
     return datetime.datetime.now().date() > datetime.datetime.strptime(
-        BeautifulSoup(date_text, 'html.parser').find('tr').findAll('td')[-1].text, '%d.%m.%Y')
+        BeautifulSoup(date_text, 'html.parser').find('tr').findAll('td')[-1].text, '%d.%m.%Y').date()
 
 
 def _load_data(url_name, filename):

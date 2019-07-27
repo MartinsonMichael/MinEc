@@ -10,10 +10,6 @@ class OkvedParser(AbstractFiller):
     def parse_item(self, inn, item=None):
         buf = []
 
-        if models.Company.objects.filter(inn=inn).count() == 0:
-            return None
-
-        company = models.Company.objects.filter(inn=inn)[0]
         # prime
         for okved in item.find('СвОКВЭД').findAll('СвОКВЭДОсн'):
             buf.append(models.OKVED(
@@ -25,7 +21,7 @@ class OkvedParser(AbstractFiller):
         # extra
         for okved in item.find('СвОКВЭД').findAll('СвОКВЭДДоп'):
             buf.append(models.OKVED(
-                _company=company,
+                _inn=inn,
                 okved_code=okved['КодОКВЭД'],
                 okved_code_name=okved['НаимОКВЭД'],
                 okved_is_prime=False,

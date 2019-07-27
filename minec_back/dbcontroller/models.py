@@ -15,7 +15,7 @@ class InnStore(models.Model):
 
 class ThreadStore(models.Model):
     th_type = models.TextField(max_length=10)
-    th_pid = models.IntegerField()
+    th_pid = models.TextField(max_length=30)
 
 
 class ScheduleTable(models.Model):

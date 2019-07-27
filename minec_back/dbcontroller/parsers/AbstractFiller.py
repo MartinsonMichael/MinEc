@@ -150,7 +150,8 @@ class AbstractFiller:
     @staticmethod
     def get_inn_element(inn):
         try:
-            return models.InnStore.objects.get(inn=inn)
+            inn_item = models.InnStore.objects.get(inn=inn)
+            return inn_item
         except:
             inn_item = models.InnStore(inn=inn)
             inn_item.save()

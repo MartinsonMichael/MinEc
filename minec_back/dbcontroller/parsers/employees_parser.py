@@ -9,17 +9,9 @@ class EmployeesNumParser(AbstractFiller):
 
     def parse_item(self, inn, item=None):
         employee_num = int(item.find('СведССЧР')['КолРаб'])
-
-        if models.Company.objects.filter(inn=inn).count() == 0:
-            return None
-
-        company = models.Company.objects.filter(inn=inn)[0]
-
         emp_item = models.EmployeeNum(
-            _company=company,
+            _inn=inn,
             employee_num=employee_num,
         )
-        # emp_item.save()
-        # return None
         return emp_item
 
