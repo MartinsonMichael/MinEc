@@ -1,11 +1,11 @@
 from django.db import models
 from dbcontroller.models import \
-    TaxBase, Company, Alive, EmployeeNum, BaseIncome, OKVED, LoadDates
+    TaxBase, Company, Alive, EmployeeNum, BaseIncome, OKVED, LoadDates, InnStore
 from dbcontroller.models_constants import *
 from dbcontroller.description_dict import get_description
 
 
-USED_MODELS = [Company, Alive, TaxBase, EmployeeNum, BaseIncome, OKVED, LoadDates]
+USED_MODELS = [Company, Alive, TaxBase, EmployeeNum, BaseIncome, OKVED, LoadDates, InnStore]
 
 
 def create_ASK_DICT():
