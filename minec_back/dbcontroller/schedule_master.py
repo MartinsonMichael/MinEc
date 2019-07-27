@@ -80,6 +80,7 @@ def __main_loop():
         time.sleep(2)
         print('**')
         master(force=True)
+        time.sleep(60 * 60 * 24)
 
 
 def master(steps=None, force=False, times=2, forced_upd_date=None):
