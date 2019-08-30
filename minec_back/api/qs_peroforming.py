@@ -245,7 +245,7 @@ def create_human_headers_dict(header):
                 break
         if f:
             continue
-        ans[x].append('-')
+        ans[x] = '-'
         for name in ASK_DICT.keys():
             if x.startswith(name) and len(name) > len(ans[x]):
                 ans[x] = ASK_DICT[name]['human']
