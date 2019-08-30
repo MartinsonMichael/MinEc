@@ -232,3 +232,31 @@ def create_human_headers(header):
                 ans[-1] = ATR[name] + ' ' + ans[-1]
     return ans
 
+
+def create_human_headers_dict(header):
+    ans = dict()
+    for x in header:
+        ans[x] = ''
+        f = False
+        for name in ASK_DICT.keys():
+            if name == x:
+                ans[x].append(ASK_DICT[name]['human'])
+                f = True
+                break
+        if f:
+            continue
+        ans[x].append('-')
+        for name in ASK_DICT.keys():
+            if x.startswith(name) and len(name) > len(ans[x]):
+                ans[x] = ASK_DICT[name]['human']
+        ATR = {
+            'sum': 'Сумма',
+            'count': 'Количество',
+            'avg': 'Среднее'
+        }
+        for name in ATR.keys():
+            if x.endswith(name):
+                ans[x] = ATR[name] + ' ' + ans[x]
+    return ans
+
+

@@ -132,18 +132,19 @@ export class AgregatorContorll extends Component{
 
   render() {
     return(
-      <div>
-
+      <div style={{ marginTop: '5px' }}>
         {
           this.state.agg.map((component, index) => (
-              <AggField
-                  key={index}
-                  index={index}
-                  onNewData={this.handleChildChange}
-                  ask_dict={this.props.ask_dict}
-              >
-                {component}
-              </AggField>
+              <div style={{ marginBottom: '5px', marginLeft: '10px' }}>
+                  <AggField
+                      key={index}
+                      index={index}
+                      onNewData={this.handleChildChange}
+                      ask_dict={this.props.ask_dict}
+                  >
+                    {component}
+                  </AggField>
+              </div>
           ))
         }
 

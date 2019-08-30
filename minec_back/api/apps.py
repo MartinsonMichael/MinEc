@@ -2,7 +2,7 @@ from django.apps import AppConfig
 from django.http import HttpResponse, StreamingHttpResponse, FileResponse
 import json
 import datetime
-from .qs_peroforming import create_human_headers, process_options, process_options_qs_file
+from .qs_peroforming import create_human_headers, process_options, process_options_qs_file, create_human_headers_dict
 from djqscsv import write_csv
 from enum import Enum, unique
 from django.utils.encoding import smart_str
@@ -114,7 +114,8 @@ def sent_q_as_file(request):
     query = process_options_qs_file(options)
     file_name = "file_" + str(datetime.datetime.now()).replace(' ', '_') + ".csv"
 
-    write_csv(query, open(file_name, 'wb'))
+    header = list(query[0].keys())
+    write_csv(query, open(file_name, 'wb'), field_header_map=create_human_headers_dict(header))
 
     print(f'save {file_name}')
 

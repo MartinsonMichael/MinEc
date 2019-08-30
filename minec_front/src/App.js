@@ -285,7 +285,7 @@ class App extends Component {
 
     render() {
     return (
-      <div>
+      <div style={{ margin: '32px 32px 32px 32px' }}>
         <div className="Title">Приложение взаимодействия с базами ФНС</div>
         <Main ask_dict={this.state.ask_dict}/>
       </div>

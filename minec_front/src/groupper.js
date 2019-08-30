@@ -97,18 +97,19 @@ export class GroupbyContorll extends Component{
 
   render() {
     return(
-      <div>
-
+      <div style={{ marginTop: '5px' }}>
         {
           this.state.gb.map((component, index) => (
-              <GroupbyField
-                  key={index}
-                  index={index}
-                  onNewData={this.handleChildChange}
-                  ask_dict={this.props.ask_dict}
-              >
-                {component}
-              </GroupbyField>
+              <div style={{ marginBottom: '5px', marginLeft: '10px' }}>
+                  <GroupbyField
+                      key={index}
+                      index={index}
+                      onNewData={this.handleChildChange}
+                      ask_dict={this.props.ask_dict}
+                  >
+                    {component}
+                  </GroupbyField>
+              </div>
           ))
         }
 

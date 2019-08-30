@@ -289,17 +289,19 @@ export class FilterController extends Component{
 
   render() {
     return(
-      <div>
+      <div style={{ marginTop: '5px' }}>
         {
           this.state.filters.map((component, index) => (
-              <FilterField
-                  key={index}
-                  index={index}
-                  onNewData={this.handleChildChange}
-                  ask_dict={this.props.ask_dict}
-              >
-                {component}
-              </FilterField>
+              <div style={{ marginBottom: '5px', marginLeft: '10px' }}>
+                  <FilterField
+                      key={index}
+                      index={index}
+                      onNewData={this.handleChildChange}
+                      ask_dict={this.props.ask_dict}
+                  >
+                    {component}
+                  </FilterField>
+              </div>
           ))
         }
         <button
