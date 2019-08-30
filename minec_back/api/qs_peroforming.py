@@ -240,7 +240,7 @@ def create_human_headers_dict(header):
         f = False
         for name in ASK_DICT.keys():
             if name == x:
-                ans[x].append(ASK_DICT[name]['human'])
+                ans[x] += ASK_DICT[name]['human']
                 f = True
                 break
         if f:
