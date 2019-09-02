@@ -119,7 +119,7 @@ class Main extends Component {
           axios.get(
               ''.concat('http://', addr, '/api/get'), {
                   params: params,
-              })
+              }, {timeout: 60 * 60 * 1000})
               .then((res) => this.onLoadQuery(res))
               .catch(function (error) {
                   console.log(error);
@@ -130,7 +130,7 @@ class Main extends Component {
               params: params,
               method: 'GET',
               responseType: 'blob', // important
-        }).then((response) => {
+        }, {timeout: 60 * 60 * 1000}).then((response) => {
           const url = window.URL.createObjectURL(new Blob([response.data]));
           const link = document.createElement('a');
           link.href = url;

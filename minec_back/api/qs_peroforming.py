@@ -186,7 +186,6 @@ def create_value_list(options, q):
 
         for key, value in options.items():
             if not key.startswith('filter'):
-                print('HERE!')
                 return list(q)
 
         fields = []
