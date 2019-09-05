@@ -194,12 +194,13 @@ def create_value_list(options, q):
             if key.startswith('filter'):
                 tables.append(f2b[value[0].split('___')[0]])
 
-        tables = list(set(tables) - set(['Company']))
-        for table in ['Company'] + tables:
+        tables = list(set(tables) - set(['Company', 'InnStore']))
+        for table in ['InnStore', 'Company'] + tables:
             fields.extend(b2f[table])
 
         print('fields we need : ', fields)
-        return q.values(*fields)
+        q = q.values(*fields)
+        return q
         # return q.values()
     q = make_list()
     q = ai_ordering(q)

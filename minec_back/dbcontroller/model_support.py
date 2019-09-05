@@ -49,7 +49,7 @@ def iterate_over_visible_fields(model=None):
             if field.name.lower() == 'id':
                 continue
 
-            if field.name.lower() == 'inn' and not model.__name__ == 'Company':
+            if field.name.lower() == 'inn' and not model.__name__ == 'InnStore':
                 continue
 
             if field.verbose_name.startswith(TECH_FILED):
