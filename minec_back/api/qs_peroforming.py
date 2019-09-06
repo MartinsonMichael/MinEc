@@ -8,6 +8,7 @@ from django.db.models import Sum, Count, Avg
 
 ASK_DICT = None
 b2f, f2b = None, None
+DELIMETER = '#'
 
 
 def parse_value(value, case):
@@ -58,7 +59,7 @@ def make_q_dict(prop, sign, value):
 
 
 def process_single_filter(filter_str, q):
-    filter_str = filter_str.split('___')
+    filter_str = filter_str.split(DELIMETER)
     prop = filter_str[0]
     sign = filter_str[1]
     value = filter_str[2:]
@@ -108,7 +109,7 @@ def process_aggregations_not_groupped_case(options, q):
     for key, value in options.items():
         if key[:6] != 'aggreg':
             continue
-        sign, value = value[0].split('___')
+        sign, value = value[0].split(DELIMETER)
         values.append({
             'count': Count(value),
             'sum': Sum(value),
@@ -125,7 +126,7 @@ def process_aggregations_groupped_case(options, q):
     for key, value in options.items():
         if key[:6] != 'aggreg':
             continue
-        sign, value = value[0].split('___')
+        sign, value = value[0].split(DELIMETER)
         values.append({
             'count': Count(value),
             'sum': Sum(value),
@@ -138,6 +139,7 @@ def process_aggregations_groupped_case(options, q):
 
 
 def process_options(options):
+    print('start process options')
     global ASK_DICT, b2f, f2b
     if ASK_DICT is None or b2f is None or f2b is None:
         ASK_DICT = create_ASK_DICT()
@@ -147,7 +149,9 @@ def process_options(options):
     q = process_groupby(options, q)
     q = process_aggregations(options, q)
 
-    return create_value_list(options, q)
+    q = create_value_list(options, q)
+    print('process options: done')
+    return q
 
 
 def process_options_qs_file(options):
@@ -159,10 +163,12 @@ def process_options_qs_file(options):
     q = process_filters(options, q)
     q = process_groupby(options, q)
     q = process_aggregations(options, q)
+    print('process options: done')
     return q
 
 
 def ai_ordering(q):
+    print('start ai ordering')
     if len(q) == 0:
         return q
     sample = q[0]
@@ -174,36 +180,43 @@ def ai_ordering(q):
             if ASK_DICT[key]['type'] == 'multy':
                 sort_key.append(key)
     q.sort(key=lambda x: tuple(x[i] for i in sort_key))
+    print('end ai ordering')
     return q
 
 
 def create_value_list(options, q):
-    def make_list():
-        if isinstance(q, list):
-            return q
-        if isinstance(q, dict):
-            return [q]
+    def make_list(q_local):
+        print('start make list')
+        if isinstance(q_local, list):
+            print('list case')
+            return q_local
+
+        if isinstance(q_local, dict):
+            print('dict case')
+            return [q_local]
 
         for key, value in options.items():
             if not key.startswith('filter'):
-                return list(q)
+                print('no filter case')
+                return list(q_local)
 
+        print('start make "fields we need"')
         fields = []
         tables = []
         for key, value in options.items():
             if key.startswith('filter'):
-                tables.append(f2b[value[0].split('___')[0]])
+                tables.append(f2b[value[0].split(DELIMETER)[0]])
 
         tables = list(set(tables) - set(['Company', 'InnStore']))
         for table in ['InnStore', 'Company'] + tables:
             fields.extend(b2f[table])
 
         print('fields we need : ', fields)
-        q = q.values(*fields)
-        return q
+        q_local = q_local.values(*fields)
+        return q_local
         # return q.values()
-    q = make_list()
-    q = ai_ordering(q)
+    q = make_list(q)
+    # q = ai_ordering(q)
     return q
 
 

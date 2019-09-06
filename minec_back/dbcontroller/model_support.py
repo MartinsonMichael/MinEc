@@ -66,6 +66,9 @@ def fill_ASK_DICT_with_model(model, ASK_DICT):
             name = model.__name__ + '__' + name
         name = name.lower()
 
+        if name == 'innstore__inn':
+            name = 'company___inn__inn'
+
         ASK_DICT[name] = {
             'table': model.__name__,
             'human': field.verbose_name[:60],

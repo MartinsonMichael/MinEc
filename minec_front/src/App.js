@@ -54,8 +54,7 @@ class Main extends Component {
 
   makeParamsForQuery(){
     // 0 - filters
-      const spase = '___';
-      const real_space = '|||';
+      const spase = '#';
       let params = {};
       if (Array.isArray(this.state.data[0])) {
           for (let i = 0; i < this.state.data[0].length; i++) {
