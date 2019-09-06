@@ -56,7 +56,7 @@ class GroupbyField extends Component{
                 onSelect={this.handleChangeProperty}
                 onChange={this.handleChangeProperty}
             >
-            {this.state.pos_prop.map((item) => (
+            {this.state.pos_prop.filter(item => item !== 'company___inn__inn').map((item) => (
                     <option value={item}>
                         {this.props.ask_dict[item].human}
                     </option>
