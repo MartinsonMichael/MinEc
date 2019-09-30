@@ -185,6 +185,13 @@ def ai_ordering(q):
 
 
 def create_value_list(options, q):
+    tables_requested = []
+    for key, value in options.items():
+        if key[:5] != 'extra':
+            continue
+        tables_requested.append(value[0])
+    print(f'requested tables: {tables_requested}')
+
     def make_list(q_local):
         print('start make list')
         if isinstance(q_local, list):
@@ -207,9 +214,14 @@ def create_value_list(options, q):
             if key.startswith('filter'):
                 tables.append(f2b[value[0].split(DELIMETER)[0]])
 
-        tables = list(set(tables) - set(['Company', 'InnStore']))
-        for table in ['InnStore', 'Company'] + tables:
-            fields.extend(b2f[table])
+        if len(tables_requested) == 0:
+            tables = list(set(tables) - set(['Company', 'InnStore']))
+            for table in ['InnStore', 'Company'] + tables:
+                fields.extend(b2f[table])
+        else:
+            tables = list(set(tables) - set(tables_requested))
+            for table in tables:
+                fields.extend(b2f[table])
 
         print('fields we need : ', fields)
         q_local = q_local.values(*fields)

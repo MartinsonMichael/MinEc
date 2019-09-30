@@ -26,9 +26,11 @@ class Main extends Component {
           data: Array(3),
           app_state: 'Ожидание запроса',
           is_file: false,
+          extraFields: [],
       };
 
       this.onFileLoadSelect = this.onFileLoadSelect.bind(this);
+      this.renderExtraFields = this.renderExtraFields.bind(this)
   }
 
   handleChildChange = (index, data) => {
@@ -93,6 +95,15 @@ class Main extends Component {
                   this.state.data[2][i].sign + spase +
                   this.state.data[2][i].property;
           }
+      }
+
+      if (Array.isArray(this.state.extraFields)) {
+          this.state.extraFields
+              .filter(item => item !== 'del')
+              .forEach((item, index) => {
+                  params['extra_f_' + index.toString()] = item
+              }
+          )
       }
 
       return params;
@@ -181,6 +192,9 @@ class Main extends Component {
             <GroupbyContorll onNewData={this.handleChildChange} ask_dict={this.props.ask_dict}/>
             <AgregatorContorll onNewData={this.handleChildChange} ask_dict={this.props.ask_dict}/>
           </div>
+
+            { this.renderExtraFields() }
+
           <button
               className="make_query"
               onClick={() => this.getQuery()}
@@ -209,6 +223,69 @@ class Main extends Component {
           />
         </div>
     );
+  }
+
+  renderExtraFields() {
+      const backTables = [
+          {name: 'Компания', value: 'Company'},
+          {name: 'Даты жизни', value: 'Alive'},
+          {name: 'Налоги', value: 'TaxBase'},
+          {name: 'ОКВЕД', value: 'OKVED'},
+          {name: 'Количество работников', value: 'EmployeeNum'},
+          {name: 'Доход', value: 'BaseIncome'},
+
+      ]
+      const Info = "Используйте этот блок, чтобы добавить таблицы, из которых будут выгружены все возможные поля. " +
+          "Лучше загружать таблицу ОКВЕД отдельно от всех остальных, так как в них много записей относящихся к одной компании."
+      return (
+          <div style={{ marginBottom: '10px' }}>
+              <div style={{ marginTop: '5px', marginBottom: '5px', marginRight: '5px' }} >
+                  <div style={{ display: 'flex' }}>
+
+                      <div style={{ marginRight: '5px' }}>
+                          <button
+                              onClick={() => alert(Info)}
+                          >
+                              ?
+                          </button>
+                      </div>
+                      Добавить поля таблиц помимо основных
+                  </div>
+              </div>
+              { this.state.extraFields.map((extraF, index) => {
+
+                  if (extraF === 'del') {
+                      return null
+                  }
+
+                  return (
+                      <select
+                          value={ this.state.extraFields[index] }
+                          onChange={ val => {
+                              console.log(val)
+                              const buf = this.state.extraFields
+                              buf[index] = val.target.value;
+                              this.setState({extraFields: buf})
+                          } }
+                      >
+                          { backTables.map(item => (
+                              <option value={ item.value }>
+                                  { item.name }
+                              </option>
+                          )) }
+
+                          <option value={ 'del' }>
+                              { 'Удалить опцию' }
+                          </option>
+                      </select>
+                  )
+              })}
+
+              <button onClick={() => this.setState({extraFields : this.state.extraFields.concat([undefined])})}>
+                  +
+              </button>
+          </div>
+      )
   }
 }
 
