@@ -154,6 +154,13 @@ def process_options(options):
     return q
 
 
+def load_ASK_DICT_to_session():
+    global ASK_DICT, b2f, f2b
+    if ASK_DICT is None or b2f is None or f2b is None:
+        ASK_DICT = create_ASK_DICT()
+        b2f, f2b = create_base_to_fields_dicts()
+
+
 def process_options_qs_file(options):
     global ASK_DICT, b2f, f2b
     if ASK_DICT is None or b2f is None or f2b is None:
@@ -202,10 +209,10 @@ def create_value_list(options, q):
             print('dict case')
             return [q_local]
 
-        for key, value in options.items():
-            if not key.startswith('filter'):
-                print('no filter case')
-                return list(q_local)
+        # for key, value in options.items():
+        #     if not key.startswith('filter'):
+        #         print('no filter case')
+        #         return list(q_local)
 
         print('start make "fields we need"')
         fields = []
@@ -215,13 +222,20 @@ def create_value_list(options, q):
                 tables.append(f2b[value[0].split(DELIMETER)[0]])
 
         if len(tables_requested) == 0:
-            tables = list(set(tables) - set(['Company', 'InnStore']))
             for table in ['InnStore', 'Company'] + tables:
                 fields.extend(b2f[table])
         else:
-            tables = list(set(tables) - set(tables_requested))
-            for table in tables:
+            fields = []
+
+            print('have some req')
+            print(tables_requested, tables)
+
+            for table in tables_requested:
                 fields.extend(b2f[table])
+
+            fields.append([x.lower() + '___inn__inn' for x in tables_requested][0])
+
+        fields = list(set(fields))
 
         print('fields we need : ', fields)
         q_local = q_local.values(*fields)
@@ -259,6 +273,7 @@ def create_human_headers(header):
 
 
 def create_human_headers_dict(header):
+    load_ASK_DICT_to_session()
     ans = dict()
     for x in header:
         ans[x] = ''

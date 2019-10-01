@@ -13,8 +13,8 @@ import { AgregatorContorll } from './agregators';
 import { GroupbyContorll } from './groupper';
 
 
-//const addr = '127.0.0.1:8000';
-const addr = '84.201.147.95';
+const addr = '127.0.0.1:8000';
+//const addr = '84.201.147.95';
 //const addr = '0.0.0.0';
 
 
@@ -27,10 +27,15 @@ class Main extends Component {
           app_state: 'Ожидание запроса',
           is_file: false,
           extraFields: [],
+
+          showLoadTable: false,
+          tableToLoad: 'Company',
+          dateToLoadTable: '',
       };
 
       this.onFileLoadSelect = this.onFileLoadSelect.bind(this);
-      this.renderExtraFields = this.renderExtraFields.bind(this)
+      this.renderExtraFields = this.renderExtraFields.bind(this);
+      this.loadSingleTable = this.loadSingleTable.bind(this);
   }
 
   handleChildChange = (index, data) => {
@@ -169,12 +174,89 @@ class Main extends Component {
       });
     }
 
+  renderLoadTableBlock() {
+      if (!this.state.showLoadTable) {
+          return null
+      }
+       const backTables = [
+          {name: 'Компания', value: 'Company'},
+          // {name: 'Даты жизни', value: 'Alive'},
+          {name: 'Налоги', value: 'TaxBase'},
+          {name: 'ОКВЕД', value: 'OKVED'},
+          {name: 'Количество работников', value: 'EmployeeNum'},
+          {name: 'Доход', value: 'BaseIncome'},
+      ]
+
+      return (
+          <div style={{ marginRight: '10px', marginLeft: '10px', display: 'flex' }}>
+
+              <div style={{ marginRight: '5px' }}>
+                  Выберете таблицу:
+                  <select
+                      value={ this.state.tableToLoad }
+                      onChange={ (event) => {this.setState({ tableToLoad: event.target.value })} }
+                  >
+                      { backTables.map(item => (
+                          <option value={item.value}>
+                              { item.name }
+                          </option>
+                      ))}
+                  </select>
+              </div>
+              <div style={{ marginRight: '5px' }}>
+                  Введите дату:
+                  <input
+                      type="text"
+                      value={ this.state.dateToLoadTable }
+                      onChange={ event => this.setState({ dateToLoadTable: event.target.value }) }
+                  />
+              </div>
+
+              <button
+                  onClick={() => this.loadSingleTable()}
+              >
+                  Загрузить
+              </button>
+
+          </div>
+      )
+  }
+
+  loadSingleTable() {
+      axios(
+          ''.concat('http://', addr, '/api/get/single/'), {
+          params: {
+              table: this.state.tableToLoad,
+              date: this.state.dateToLoadTable,
+          },
+          method: 'GET',
+          responseType: 'blob', // important
+          timeout: 60 * 60 * 1000
+      }).then((response) => {
+          const url = window.URL.createObjectURL(new Blob([response.data]));
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', 'data.csv');
+          document.body.appendChild(link);
+          link.click();
+      })
+  }
+
   render() {
     return (
         <div className="Main">
             <button onClick={() => this.showInfo()}>Справка</button>
             <button onClick={() => this.get_update_date()}>Показать даты обновлений</button>
             <p/>
+
+
+            <div style={{ display: 'flex' }}>
+                <button onClick={() => this.setState({ showLoadTable: !this.state.showLoadTable })}>
+                    { !this.state.showLoadTable ? "Выгрузить таблицу" : "Скрыть панель" }
+                </button>
+                { this.renderLoadTableBlock() }
+            </div>
+
             <label>
                 {this.state.app_state}
             </label>
@@ -193,7 +275,7 @@ class Main extends Component {
             <AgregatorContorll onNewData={this.handleChildChange} ask_dict={this.props.ask_dict}/>
           </div>
 
-            { this.renderExtraFields() }
+            {/*{ this.renderExtraFields() }*/}
 
           <button
               className="make_query"
@@ -233,10 +315,13 @@ class Main extends Component {
           {name: 'ОКВЕД', value: 'OKVED'},
           {name: 'Количество работников', value: 'EmployeeNum'},
           {name: 'Доход', value: 'BaseIncome'},
+          // {name: 'Инн', value: 'InnStore'},
 
       ]
-      const Info = "Используйте этот блок, чтобы добавить таблицы, из которых будут выгружены все возможные поля. " +
-          "Лучше загружать таблицу ОКВЕД отдельно от всех остальных, так как в них много записей относящихся к одной компании."
+      const display_plus = this.state.extraFields.filter(item => item !== 'del').length === 0
+      //const Info = "Используйте этот блок, чтобы добавить таблицы, из которых будут выгружены все возможные поля. " +
+      //    "Лучше загружать таблицу ОКВЕД отдельно от всех остальных, так как в них много записей относящихся к одной компании."
+      const Info = "Используйте '+' для выбора и загрузки полоной таблицы, удовлетворяющей условиям"
       return (
           <div style={{ marginBottom: '10px' }}>
               <div style={{ marginTop: '5px', marginBottom: '5px', marginRight: '5px' }} >
@@ -249,41 +334,55 @@ class Main extends Component {
                               ?
                           </button>
                       </div>
-                      Добавить поля таблиц помимо основных
+                      Выгрузить таблицу
                   </div>
               </div>
-              { this.state.extraFields.map((extraF, index) => {
+              <div style={{ display: 'flex' }}>
+                  { this.state.extraFields.map((extraF, index) => {
 
-                  if (extraF === 'del') {
-                      return null
+                      if (extraF === 'del') {
+                          return null
+                      }
+
+                      return (
+                          <div style={{ marginRight: '5px' }}>
+                              <button onClick={() => {
+                                  const buf = this.state.extraFields
+                                  buf[index] = 'del'
+                                  this.setState({extraFields: buf})
+                              }}>
+                                  x
+                              </button>
+                              <select
+                                  value={ this.state.extraFields[index] }
+                                  onChange={ val => {
+                                      const buf = this.state.extraFields
+                                      buf[index] = val.target.value;
+                                      this.setState({extraFields: buf})
+                                  } }
+                              >
+                                  { backTables.map(item => (
+                                      <option value={ item.value }>
+                                          { item.name }
+                                      </option>
+                                  )) }
+
+                                  {/*<option value={ 'del' }>*/}
+                                  {/*    { 'Удалить опцию' }*/}
+                                  {/*</option>*/}
+                              </select>
+                          </div>
+                      )
+                  })}
+
+                  { display_plus ? (
+
+                      <button onClick={() => this.setState({extraFields : this.state.extraFields.concat(['Company'])})}>
+                          +
+                      </button>
+                    ) : null
                   }
-
-                  return (
-                      <select
-                          value={ this.state.extraFields[index] }
-                          onChange={ val => {
-                              console.log(val)
-                              const buf = this.state.extraFields
-                              buf[index] = val.target.value;
-                              this.setState({extraFields: buf})
-                          } }
-                      >
-                          { backTables.map(item => (
-                              <option value={ item.value }>
-                                  { item.name }
-                              </option>
-                          )) }
-
-                          <option value={ 'del' }>
-                              { 'Удалить опцию' }
-                          </option>
-                      </select>
-                  )
-              })}
-
-              <button onClick={() => this.setState({extraFields : this.state.extraFields.concat([undefined])})}>
-                  +
-              </button>
+              </div>
           </div>
       )
   }

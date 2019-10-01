@@ -127,3 +127,67 @@ def sent_q_as_file(request):
     response['Content-Disposition'] = f'attachment; filename={smart_str(file_name)}'
 
     return response
+
+
+def download_table_by_date(request):
+    from dbcontroller.models import Company, TaxBase, BaseIncome, EmployeeNum, Alive, OKVED, LoadDates
+    from dbcontroller.model_support import create_ASK_DICT
+
+    ASK_DICT = create_ASK_DICT()
+
+    options = dict(request.GET)
+    print(options)
+
+    table_name = options['table'][0]
+    table_date = datetime.datetime.strptime(options['date'][0], '%d.%m.%Y')
+
+    file_name = "file_" + str(datetime.datetime.now()).replace(' ', '_') + ".csv"
+    print(f'table_date : {table_date}, table_name : {table_name}')
+    loadDateObj = LoadDates.objects.get(date=table_date)
+    print(loadDateObj)
+
+    query = None
+    if table_name == 'Company':
+        query = Company
+    if table_name == 'TaxBase':
+        query = TaxBase
+    if table_name == 'BaseIncome':
+        query = BaseIncome
+    if table_name == 'EmployeeNum':
+        query = EmployeeNum
+    if table_name == 'Alive':
+        query = Alive
+    if table_name == 'OKVED':
+        query = OKVED
+
+    query = query.objects
+    query = query.filter(upd_date=loadDateObj)
+
+    field = []
+
+    bufheader = list(set(query.values()[0].keys()) - {'id', '_inn_id'})
+
+    bufbufheader = bufheader + ['_inn__inn']
+
+    query = query.values(*bufbufheader)
+
+    print(f'bufheaders : {bufheader}')
+
+    header = list(query[0].keys())
+
+    name_dict = {'_inn__inn': 'ИНН'}
+
+    for key, value in ASK_DICT.items():
+        val2 = '__'.join(key.split('__')[1:])
+        if val2 in bufheader:
+            print(f'find {key}')
+            name_dict[val2] = value['human']
+
+
+    write_csv(query, open(file_name, 'wb'), field_header_map=name_dict)
+
+    response = StreamingHttpResponse(open(file_name, 'rb').readlines(), content_type="text/csv")
+    response["Access-Control-Allow-Origin"] = '*'
+    response['Content-Disposition'] = f'attachment; filename={smart_str(file_name)}'
+
+    return response

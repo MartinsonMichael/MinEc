@@ -73,6 +73,7 @@ def fill_ASK_DICT_with_model(model, ASK_DICT):
             'table': model.__name__,
             'human': field.verbose_name[:60],
             'machine': name,
+            'name_without_table': field.name,
             'description': get_description(field),
             'sign': [{'value': 'none', 'name': '---'}],
             'type': 'undefined',

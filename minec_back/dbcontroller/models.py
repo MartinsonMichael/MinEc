@@ -1,5 +1,16 @@
 from django.db import models
 from dbcontroller.models_constants import *
+#
+# from sqlalchemy.ext.declarative import declarative_base
+# import sqlalchemy as sqla
+#
+#
+# base = declarative_base()
+#
+#
+# class DateList(base):
+#     __tablename__ = 'update_time'
+#     date = sqla.Column(sqla.Date, primary_key=True)
 
 
 class LoadDates(models.Model):
