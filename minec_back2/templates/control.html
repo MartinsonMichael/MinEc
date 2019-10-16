@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Database control page</title>
+</head>
+<body>
+
+<label> Всего компаний в базе: {{ cnt }} </label>
+
+
+
+<div>
+    <form action="{% url 'base_control' 'fill' %}" method="get">
+        Зупустить fill
+        <input type="submit">
+    </form>
+
+    <form action="{% url 'base_control' 'test' %}" method="get">
+        Зупустить test
+        <input type="submit">
+    </form>
+
+    <form action="{% url 'base_control' 'test_with_load' %}" method="get">
+        Зупустить test with load
+        <input type="submit">
+    </form>
+
+    <form action="{% url 'base_control' 'penis' %}" method="get">
+        PENIS ! !  ! ! ! ! ! w,fjbkgberwougfo
+        <input type="submit">
+    </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{% extends 'block_try.html' %}
+
+{% block filter_block %}
+
+    {% for item in filters %}
+        <tr> {{ item.name }}</tr>
+        <tr> {{ item.sign }}</tr>
+        <tr> {{ item.value }}</tr>
+    {% endfor %}
+
+{% endblock %}
