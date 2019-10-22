@@ -1,22 +1,14 @@
-from dbcontroller.parsers import AbstractFiller
-from dbcontroller import models
-from dbcontroller import model_support
-import datetime
+from dbcontroller.model_constants import TAX_NAME_TO_ATTRIBUTE
+from dbcontroller.models import TaxBase
 
 
-class TaxParser(AbstractFiller):
+def parse_tex(item, inn, upd_date):
+    attributes = {
+        'inn': inn,
+        'upd_date': upd_date,
+    }
 
-    def __init__(self, steps=None, upd_date=None):
-        super(TaxParser, self).__init__(cur_model=models.TaxBase, steps=steps, upd_date=upd_date)
-        self.TAX_DICT = model_support.create_TAX_DICT()
+    for tax in item.find_all('СвУплСумНал'):
+        attributes.update({TAX_NAME_TO_ATTRIBUTE[tax['НаимНалог']]: tax['СумУплНал']})
 
-    def parse_item(self, inn, item=None):
-
-        tax_item = models.TaxBase(
-            _inn=inn,
-        )
-
-        for tax in item.find_all('СвУплСумНал'):
-            setattr(tax_item, self.TAX_DICT[tax['НаимНалог']], tax['СумУплНал'])
-
-        return tax_item
+    return TaxBase(**attributes)

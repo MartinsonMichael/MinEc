@@ -1,6 +1,6 @@
-from .AbstractFiller import AbstractFiller
-from .company_main_parser import CompanyMainParser
-from .tax_parser import TaxParser
-from .employees_parser import EmployeesNumParser
-from .okved_parser import OkvedParser
-from .income_parser import IncomeParser
+from .parsers_utils import *
+from .company_parser import parse_company
+from .employees_parser import parse_employee_num
+from .tax_parser import parse_tex
+from .income_parser import parse_income
+# from .okved_parser import OkvedParser

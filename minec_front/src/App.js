@@ -47,10 +47,8 @@ class Main extends Component {
   onLoadQuery(response){
     console.log(response);
     this.setState({
-        table_header : JSON.parse(response.data.table_header),
         table_human_header : JSON.parse(response.data.table_human_header),
         table_body : JSON.parse(response.data.table_body),
-        table_error : JSON.parse(response.data.table_error),
         app_state: 'Запрос получен. Ожидание нового запроса'
     });
 
@@ -97,8 +95,8 @@ class Main extends Component {
                   continue;
               }
               params['aggregate_' + i] =
-                  this.state.data[2][i].sign + spase +
-                  this.state.data[2][i].property;
+                  this.state.data[2][i].property + spase +
+                  this.state.data[2][i].sign;
           }
       }
 
@@ -300,7 +298,6 @@ class Main extends Component {
 
           <MyTable2
               table_human_header={this.state.table_human_header}
-              table_header={this.state.table_header}
               table_body={this.state.table_body}
           />
         </div>
@@ -401,7 +398,7 @@ class MyTable2 extends Component{
     }
 
     render() {
-        if (!Array.isArray(this.props.table_header)) {
+        if (!Array.isArray(this.props.table_human_header)) {
             return (<a></a>)
         }
 
@@ -421,8 +418,8 @@ class MyTable2 extends Component{
                         this.props.table_body.map((row) =>
                             <TableRow>
                                 {
-                                    this.props.table_header.map((head_name) =>
-                                        (this.render_item(row[head_name]))
+                                    row.map((item) =>
+                                        (this.render_item(item))
                                     )
                                 }
                             </TableRow>

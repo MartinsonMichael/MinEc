@@ -29,7 +29,7 @@ class FilterField extends Component{
     this.delItem = this.delItem.bind(this);
     this.showInfo = this.showInfo.bind(this);
     this.showInfo = this.showInfo.bind(this);
-    this.render_multy = this.render_multy.bind(this);
+    this.render_multi = this.render_multi.bind(this);
     this.handleValueArrayAdd = this.handleValueArrayAdd.bind(this);
     this.handleValueArrayChange = this.handleValueArrayChange.bind(this);
 
@@ -155,7 +155,7 @@ class FilterField extends Component{
      // )
   }
 
-  render_multy(){
+  render_multi(){
       return (
         <div>
             {this.state.data.value.map((item, i) => (
@@ -165,7 +165,7 @@ class FilterField extends Component{
                 >
                     {this.props.ask_dict[this.state.data.property].suggestions.map((item2) => (
                     <option value={item2.value}>
-                        {item2.name}
+                        {item2.text}
                     </option>
 
                     ))}
@@ -208,7 +208,7 @@ class FilterField extends Component{
         >
             {this.state.pos_prop.map((item) => (
                     <option value={item}>
-                        {this.props.ask_dict[item].human}
+                        {this.props.ask_dict[item].human_name}
                     </option>
 
             ))}
@@ -235,8 +235,8 @@ class FilterField extends Component{
                     <option value={"False"}> Нет </option>
                 </select>
             ) : null}
-            {property_type === 'multy' ? (
-                this.render_multy()
+            {property_type === 'multi' ? (
+                this.render_multi()
             ) : null}
             {property_type === 'number' ? (
                 <input

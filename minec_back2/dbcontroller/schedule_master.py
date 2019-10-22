@@ -1,121 +1,59 @@
-from .models import ScheduleTable
 import datetime
 from bs4 import BeautifulSoup
 import urllib.request
 import requests
 import zipfile
-from .models import Company, EmployeeNum, BaseIncome, TaxBase, OKVED, LoadDates
-from .models import ThreadStore
+from typing import Dict, Any
 
 from dbcontroller import parsers
-import threading
 import os
 import signal
 import time
 
-BUFFER_DIR = './buffer/'
+from dbcontroller.parsers import parse_folder
+
+BUFFER_DIR = './data/'
 PAGE_TYPES = {
-    Company: {
+    'Company': {
         'name': 'Единый реестр субъектов малого и среднего предпринимательства',
         'url_name': '7707329152-rsmp',
-        'parser': parsers.CompanyMainParser,
-        'priority': 10,
+        'folder_name': 'company',
+        'parsers': parsers.parse_company,
     },
-    EmployeeNum: {
+    'EmployeeNum': {
         'name': 'Сведения о среднесписочной численности работников организации',
         'url_name': '7707329152-sshr',
-        'parser': parsers.EmployeesNumParser,
-        'priority': 1,
+        'folder_name': 'employee_num',
+        'parsers': parsers.parse_employee_num,
     },
-    BaseIncome: {
+    'BaseIncome': {
         'name': 'Сведения о суммах доходов и расходов по данным бухгалтерской'
                 ' (финансовой) отчетности организации за год, предшествующий '
                 'году размещения таких сведений на сайте ФНС России',
         'url_name': '7707329152-revexp',
-        'parser': parsers.IncomeParser,
-        'priority': 1,
+        'folder_name': 'income',
+        'parsers': parsers.parse_income,
     },
-    TaxBase: {
+    'TaxBase': {
         'name': 'НАЛОГИ',
         'url_name': '7707329152-paytax',
-        'parser': parsers.TaxParser,
-        'priority': 1,
+        'folder_name': 'taxes',
+        'parsers': parsers.parse_tex,
     },
-    OKVED: {
-        'name': 'ОКВЕД',
-        'url_name': '7707329152-rsmp',
-        'parser': parsers.OkvedParser,
-        'priority': 1,
-    }
+    # OKVED: {
+    #     'name': 'ОКВЕД',
+    #     'url_name': '7707329152-rsmp',
+    #     'parser': parsers.OkvedParser,
+    #     'priority': 1,
+    # }
 }
 
 
-def launch_main_cycle():
-    if ThreadStore.objects.filter(th_type='extra').count() > 0:
-        main_pid = ThreadStore.objects.filter(th_type='main')[0].values
-        os.kill(main_pid, signal.SIGTERM)
-
-    threading.enumerate()
-
-
-def relaunch_main():
-    if ThreadStore.objects.filter(th_type='main').count() > 0:
-        main_pid = ThreadStore.objects.filter(th_type='main').values()
-        for pid in main_pid:
-            try:
-                os.kill(int(pid['th_pid']), signal.SIGTERM)
-            except:
-                pass
-    threading.Thread(
-        group=None,
-        target=__main_loop,
-        daemon=False,
-    ).start()
-
-
-def __main_loop():
-    ThreadStore(th_type='main', th_pid=os.getpid()).save()
-    while True:
-        print('**')
-        time.sleep(2)
-        print('**')
-        master(force=True)
-        time.sleep(60 * 60 * 24)
-
-
-def master(steps=None, force=False, times=2, forced_upd_date=None):
-    upd_date_date = datetime.datetime.now().date()
-    if LoadDates.objects.filter(date=upd_date_date).count() == 0:
-        date_item = LoadDates(date=upd_date_date)
-        date_item.save()
-    else:
-        date_item = LoadDates.objects.order_by('-date')[0]
-    if LoadDates.objects.count() >= 2:
-        date_pre_last = LoadDates.objects.order_by('-date')[1]
-    else:
-        force = True
-        date_pre_last = LoadDates.objects.order_by('-date')[0]
-
-    if forced_upd_date is not None:
-        if isinstance(forced_upd_date, str):
-            forced_upd_date = datetime.datetime.strptime(forced_upd_date, '%d.%m.%Y')
-        if LoadDates.objects.filter(date=forced_upd_date).count() > 0:
-            date_item = LoadDates.objects.filter(date=forced_upd_date)[0]
-
-    to_upd = get_updated_base_list(force)
-    not_today = [x for x in PAGE_TYPES.keys() if x not in to_upd]
-
-    if len(to_upd) == 0:
-        return
-
-    for _ in range(times):
-        for base in to_upd:
-            _try_update_base(base, steps=steps, upd_date=date_item)
-
-    for base in not_today:
-        q = base.objects.filter(upd_date=date_pre_last)
-        if q.count() > 0:
-            parsers.AbstractFiller(base, date_pre_last).add_upd_date(q)
+def master_single(upd_date: datetime.date = None, steps: int = None):
+    if not upd_date:
+        upd_date = datetime.datetime.now().date()
+    for base_name, description in PAGE_TYPES.items():
+        _try_update_base(description, upd_date, steps)
 
 
 def get_updated_base_list(force=False):
@@ -126,66 +64,36 @@ def get_updated_base_list(force=False):
     return upd
 
 
-def _try_update_base(base, upd_date, steps=None):
-    q = ScheduleTable.objects.\
-        filter(date__gte=datetime.datetime.now().date() - datetime.timedelta(days=14))
+def _try_update_base(
+        description: Dict[str, Any],
+        upd_date: datetime.date,
+        steps: int = None,
+        need_load=True,
+        need_unzip=True,
+        need_add=True,
+):
 
-    base_name = base.__name__
-    page_type = PAGE_TYPES[base]
-    zip_file_name = os.path.join(BUFFER_DIR, page_type['url_name'] + '_data_zip.zip')
-    folder_name = os.path.join(BUFFER_DIR, page_type['url_name'] + '_data_folder')
+    cur_upd_dir = os.path.join(BUFFER_DIR, str(upd_date))
+    if not os.path.exists(cur_upd_dir):
+        os.makedirs(cur_upd_dir)
 
-    if q.filter(type='done').filter(base_name=base_name).count() > 0:
-        return True
+    zip_file_name = os.path.join(cur_upd_dir, description['folder_name'] + '.zip')
+    folder_name = os.path.join(cur_upd_dir, description['folder_name'])
 
     # load data
-    if q.filter(type='load').filter(zip_file_name=page_type['url_name']).count() == 0:
-        print('load')
-        if _load_data(page_type['url_name'], zip_file_name):
-            schedule_item = ScheduleTable(
-                date=datetime.datetime.now().date(),
-                type='load',
-                zip_file_name=page_type['url_name'],
-            )
-            schedule_item.save()
-        else:
-            return False
+    if need_load:
+        print(f"load {description['folder_name']}")
+        _load_data(description['url_name'], zip_file_name)
 
     # unzip
-    if q.filter(type='unzip').filter(zip_file_name=page_type['url_name']).count() == 0:
-        print('unzip')
-        if _extract_data(zip_file_name, folder_name):
-            schedule_item = ScheduleTable(
-                date=datetime.datetime.now().date(),
-                type='unzip',
-                zip_file_name=page_type['url_name'],
-            )
-            schedule_item.save()
-            schedule_item = ScheduleTable(
-                date=datetime.datetime.now().date(),
-                type='need_to_add',
-                zip_file_name=page_type['url_name'],
-                file_name=str(len(os.listdir(folder_name))),
-            )
-            schedule_item.save()
-        else:
-            return False
-
-    print('start adding')
-    q = q.filter(base_name=base_name)
+    if need_unzip:
+        print(f"unzip {description['folder_name']}")
+        _extract_data(zip_file_name, folder_name)
 
     # add
-    if q.filter(type='add').count() != len(os.listdir(folder_name)):
-        parser = page_type['parser'](steps=steps, upd_date=upd_date)
-        if parser.parse_folder(folder_name) and steps is None:
-            schedule_item = ScheduleTable(
-                date=datetime.datetime.now().date(),
-                type='done',
-                base_name=base_name,
-            )
-            schedule_item.save()
-
-    return q.filter(type='done').count() > 0
+    if need_add:
+        print(f"add {description['folder_name']}")
+        parse_folder(folder_name, upd_date, description['parsers'], steps=steps)
 
 
 def has_got_update(base):
@@ -221,7 +129,6 @@ def _load_data(url_name, filename):
 
 def _extract_data(filename, dirname):
     try:
-
         if not os.path.exists(dirname):
             os.makedirs(dirname)
         zip_ref = zipfile.ZipFile(filename, 'r')

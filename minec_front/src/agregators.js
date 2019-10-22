@@ -93,7 +93,7 @@ class AggField extends Component{
             >
             {this.state.pos_prop.map((item) => (
                     <option value={item}>
-                        {this.props.ask_dict[item].human}
+                        {this.props.ask_dict[item].human_name}
                     </option>
 
             ))}
