@@ -17,12 +17,12 @@ services:
   backend:
     container_name: backend
     build:
-      context: ./minec_back/
+      context: ./minec_back2/
       dockerfile: Dockerfile
     expose:
       - "8000"
     volumes:
-      - ./minec_back:/backend
+      - ./minec_back2:/backend
     depends_on:
      - db
 

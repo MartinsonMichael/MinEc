@@ -5,6 +5,7 @@ __pycache__/
 .ipynb_checkpoints/*
 watch.ipynb
 minec_back/buffer/*
+minec_back2/data/*
 MinEc_prod/*
 stuff/*
  
