@@ -4,8 +4,8 @@ from sqlalchemy_utils.types.choice import ChoiceType
 from sqlalchemy import create_engine
 
 from dbcontroller.model_constants import REGION_TYPES, FEDERAL_TYPES, COMPANY_TYPE
+from dbcontroller.session_contoller import get_engine
 
-engine = create_engine('postgresql://michael:123@localhost/minec_base_3')
 Base = declarative_base()
 
 INN_SIZE = 24
@@ -97,4 +97,4 @@ USED_TABLES = [Company, TaxBase, BaseIncome, OKVED, EmployeeNum]
 ALL_TABLES = [Company, TaxBase, BaseIncome, OKVED, EmployeeNum, InnStorage, DateList]
 
 
-Base.metadata.create_all(engine)
+Base.metadata.create_all(get_engine())

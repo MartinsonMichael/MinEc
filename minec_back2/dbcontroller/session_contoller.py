@@ -2,8 +2,12 @@ from decorator import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-engine = create_engine('postgresql://michael:123@localhost/minec_base_3')
+engine = create_engine('postgresql://michael:123@db/minec_base_3')
 Session = sessionmaker(bind=engine, autoflush=True, autocommit=False)
+
+
+def get_engine():
+    return engine
 
 
 @contextmanager
