@@ -15,6 +15,12 @@ def get_template_HTTP_RESPONSE():
 
 def get_ask_dict(request):
     resp = get_template_HTTP_RESPONSE()
+    askDict = create_AskDict()
+    for key in askDict.keys():
+        if key.startswith('inn') and key != 'inn':
+            del askDict[key]
+        if key.startswith('upd_date') and key != 'upd_date':
+            del askDict[key]
     resp.content = json.dumps({
         'ask_dict': create_AskDict(),
     })

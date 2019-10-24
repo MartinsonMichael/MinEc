@@ -93,8 +93,6 @@ def create_AskDict() -> Dict[str, Dict[str, Any]]:
     ask_dict = {}
     for table in USED_TABLES:
         for column in table.__table__.columns:
-            if column.name == 'inn' or column.name == 'upd_date':
-                continue
             ask_dict[column.name] = {
                 'machine_name': column.name.lower(),
                 'table_name': column.table.name.lower(),
