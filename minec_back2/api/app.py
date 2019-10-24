@@ -17,7 +17,7 @@ def get_ask_dict(request):
     resp = get_template_HTTP_RESPONSE()
     askDict = create_AskDict()
     real_to_send = {}
-    for key, info in askDict.keys():
+    for key, info in askDict.items():
         if key.startswith('inn') and key != 'inn':
             continue
         if key.startswith('upd_date') and key != 'upd_date':
