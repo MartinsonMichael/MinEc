@@ -236,7 +236,7 @@ def make_query(
             query = query.group_by(*[grouper['column_obj'] for grouper in text_query[GROUP_KEY]])
 
         # FIXME limit for debugging
-        query = query.limit(50 * 100)
+        # query = query.limit(50 * 100)
         return query.all()
 
 
