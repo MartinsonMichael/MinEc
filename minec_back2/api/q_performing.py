@@ -150,6 +150,7 @@ def get_tables_set(options_dict: Dict[str, List[str]], only_type: Set[str] = Non
         if key == 'tables':
             for we_need_this_table in options_dict['tables']:
                 tables.add(we_need_this_table.lower())
+            continue
 
         # FIXME!!!
         flag = False
@@ -158,6 +159,15 @@ def get_tables_set(options_dict: Dict[str, List[str]], only_type: Set[str] = Non
                 flag = True
         if flag:
             continue
+
+        # FIXME!!!
+        flag = True
+        for item in {'filter', 'groupby', 'aggregate'}:
+            if key.startswith(item):
+                flag = False
+        if flag:
+            continue
+
 
         column_name = value[0].split(SPLIT_SYMBOL)[0]
         print(f'column_name : {column_name}')
