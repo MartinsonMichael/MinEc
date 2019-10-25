@@ -99,30 +99,30 @@ class FilterField extends Component{
   }
 
   validateDate(event){
-     let str = event.target.value;
-     //str = str.replace(' ', '');
-     this.setState({error : 'None'});
-     if (!str.match(/^\d{2}\.\d{2}\.\d{4}(-\d{2}\.\d{2}\.\d{4})?(,\d{2}\.\d{2}\.\d{4}(-\d{2}\.\d{2}\.\d{4})?)*$/)){
-         const description = this.props.ask_dict[this.state.data.property].description;
-         alert('Неправильный формат данных!\n\n' + description.type_description)
-        // this.setState({error :
-        //         "date must be set of a single date 'DD.MM.YYYY' or a " +
-        //         "range DD.MM.YYYY-DD.MM.YYYY, separated by comma without spaces"})
-     }
+     // let str = event.target.value;
+     // //str = str.replace(' ', '');
+     // this.setState({error : 'None'});
+     // if (!str.match(/^\d{2}\.\d{2}\.\d{4}(-\d{2}\.\d{2}\.\d{4})?(,\d{2}\.\d{2}\.\d{4}(-\d{2}\.\d{2}\.\d{4})?)*$/)){
+     //     const description = this.props.ask_dict[this.state.data.property].description;
+     //     alert('Неправильный формат данных!\n\n' + description.type_description)
+     //    // this.setState({error :
+     //    //         "date must be set of a single date 'DD.MM.YYYY' or a " +
+     //    //         "range DD.MM.YYYY-DD.MM.YYYY, separated by comma without spaces"})
+     // }
 
   }
 
   validateNumberString(event){
-     let str = event.target.value;
-     //str = str.replace('( )', '');
-     this.setState({error : 'None'});
-     if (!str.match(/^(\d+(\.\d+)?,|\d+(\.\d+)?-\d+(\.\d+)?,)*(\d+(\.\d+)?|\d+(\.\d+)?-\d+(\.\d+)?)$/)){
-         const description = this.props.ask_dict[this.state.data.property].description;
-         alert('Неправильный формат данных!\n\n' + description.type_description)
-         // this.setState({error :
-         //         "number string should consist of numbers and ranges" +
-         //         " separated by comma, like '12,23-34,234,250-800'"})
-     }
+     // let str = event.target.value;
+     // //str = str.replace('( )', '');
+     // this.setState({error : 'None'});
+     // if (!str.match(/^(\d+(\.\d+)?,|\d+(\.\d+)?-\d+(\.\d+)?,)*(\d+(\.\d+)?|\d+(\.\d+)?-\d+(\.\d+)?)$/)){
+     //     const description = this.props.ask_dict[this.state.data.property].description;
+     //     alert('Неправильный формат данных!\n\n' + description.type_description)
+     //     // this.setState({error :
+     //     //         "number string should consist of numbers and ranges" +
+     //     //         " separated by comma, like '12,23-34,234,250-800'"})
+     // }
   }
 
   delItem(){

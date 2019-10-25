@@ -3,14 +3,15 @@ from bs4 import BeautifulSoup
 import urllib.request
 import requests
 import zipfile
-from typing import Dict, Any
+from typing import Dict, Any, Union, Tuple
 
 from dbcontroller import parsers
 import os
-import signal
-import time
 
-from dbcontroller.parsers import parse_folder
+from dbcontroller.models import DateList
+from dbcontroller.parsers import parse_folder, session_scope
+from dbcontroller.models import DateList
+from dbcontroller.session_contoller import session_scope
 
 BUFFER_DIR = './data/'
 PAGE_TYPES = {
@@ -52,6 +53,10 @@ PAGE_TYPES = {
 def master_single(upd_date: datetime.date = None, steps: int = None):
     if not upd_date:
         upd_date = datetime.datetime.now().date()
+    try:
+        _add_upd_date_to_base(upd_date)
+    except:
+        pass
     for base_name, description in PAGE_TYPES.items():
         _try_update_base(description, upd_date, steps)
 
@@ -66,12 +71,14 @@ def get_updated_base_list(force=False):
 
 def _try_update_base(
         description: Dict[str, Any],
-        upd_date: datetime.date,
+        upd_date: Union[datetime.date, Tuple[int]],
         steps: int = None,
         need_load=True,
         need_unzip=True,
         need_add=True,
 ):
+    if isinstance(upd_date, Tuple):
+        upd_date = datetime.datetime(year=upd_date[0], month=upd_date[1], day=upd_date[2]).date()
 
     cur_upd_dir = os.path.join(BUFFER_DIR, str(upd_date))
     if not os.path.exists(cur_upd_dir):
@@ -137,3 +144,12 @@ def _extract_data(filename, dirname):
         return True
     except:
         return False
+
+
+def _add_upd_date_to_base(upd_date: Union[Tuple[int], datetime.date]):
+    if not isinstance(upd_date, datetime.date):
+        date = datetime.datetime(year=upd_date[2], month=upd_date[1], day=upd_date[0])
+    else:
+        date = upd_date
+    with session_scope() as session:
+        session.add(DateList(date=date))

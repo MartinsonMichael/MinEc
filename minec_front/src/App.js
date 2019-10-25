@@ -17,6 +17,8 @@ import { GroupbyContorll } from './groupper';
 const addr = '84.201.147.95';
 //const addr = '0.0.0.0';
 
+const spase = '#';
+
 
 class Main extends Component {
 
@@ -30,7 +32,7 @@ class Main extends Component {
 
           showLoadTable: false,
           tableToLoad: 'Company',
-          dateToLoadTable: '',
+          dateToLoadTable: ''//String(this.props.ask_dict.upd_date.suggestions[0].value),
       };
 
       this.onFileLoadSelect = this.onFileLoadSelect.bind(this);
@@ -59,7 +61,7 @@ class Main extends Component {
 
   makeParamsForQuery(){
     // 0 - filters
-      const spase = '#';
+
       let params = {};
       if (Array.isArray(this.state.data[0])) {
           for (let i = 0; i < this.state.data[0].length; i++) {
@@ -107,6 +109,9 @@ class Main extends Component {
                   params['extra_f_' + index.toString()] = item
               }
           )
+      }
+      if (this.state.is_file) {
+          params['file'] = 'true'
       }
 
       return params;
@@ -173,16 +178,21 @@ class Main extends Component {
     }
 
   renderLoadTableBlock() {
-      if (!this.state.showLoadTable) {
+        if (!this.state.showLoadTable) {
           return null
-      }
+        }
+        console.log(this.state.dateToLoadTable)
+        if (this.state.dateToLoadTable === '') {
+            console.log(this.state.dateToLoadTable)
+            this.setState({ dateToLoadTable : this.props.ask_dict['upd_date'].suggestions[0].value[0]})
+        }
        const backTables = [
-          {name: 'Компания', value: 'Company'},
+          {name: 'Компания', value: 'company'},
           // {name: 'Даты жизни', value: 'Alive'},
-          {name: 'Налоги', value: 'TaxBase'},
-          {name: 'ОКВЕД', value: 'OKVED'},
-          {name: 'Количество работников', value: 'EmployeeNum'},
-          {name: 'Доход', value: 'BaseIncome'},
+          {name: 'Налоги', value: 'taxes'},
+          // {name: 'ОКВЕД', value: 'OKVED'},
+          {name: 'Количество работников', value: 'employee'},
+          {name: 'Доход', value: 'income'},
       ]
 
       return (
@@ -195,19 +205,27 @@ class Main extends Component {
                       onChange={ (event) => {this.setState({ tableToLoad: event.target.value })} }
                   >
                       { backTables.map(item => (
-                          <option value={item.value}>
+                          <option value={item.value} key={item.value}>
                               { item.name }
                           </option>
                       ))}
                   </select>
               </div>
               <div style={{ marginRight: '5px' }}>
-                  Введите дату:
-                  <input
-                      type="text"
+                  Выберете дату:
+                  <select
                       value={ this.state.dateToLoadTable }
-                      onChange={ event => this.setState({ dateToLoadTable: event.target.value }) }
-                  />
+                      onChange={ event => {
+                          console.log(event);
+                          this.setState({ dateToLoadTable: String(event.target.value) })
+                      } }
+                  >
+                  {this.props.ask_dict['upd_date'].suggestions.map((item2) => (
+                      <option value={item2.value} key={item2.value}>
+                          {item2.text}
+                      </option>
+                  ))}
+                  </select>
               </div>
 
               <button
@@ -224,8 +242,9 @@ class Main extends Component {
       axios(
           ''.concat('http://', addr, '/api/get/single/'), {
           params: {
-              table: this.state.tableToLoad,
-              date: this.state.dateToLoadTable,
+              tables: this.state.tableToLoad,
+              filter: `upd_date${spase}eq${spase}${this.state.dateToLoadTable}${spase}`,
+              file: 'true',
           },
           method: 'GET',
           responseType: 'blob', // important
@@ -309,7 +328,7 @@ class Main extends Component {
           {name: 'Компания', value: 'Company'},
           {name: 'Даты жизни', value: 'Alive'},
           {name: 'Налоги', value: 'TaxBase'},
-          {name: 'ОКВЕД', value: 'OKVED'},
+          // {name: 'ОКВЕД', value: 'OKVED'},
           {name: 'Количество работников', value: 'EmployeeNum'},
           {name: 'Доход', value: 'BaseIncome'},
           // {name: 'Инн', value: 'InnStore'},

@@ -8,7 +8,7 @@ from dbcontroller.model_constants import \
     COLUMN_TYPE_TO_NAME, \
     get_TABLES_COLUMN_MACHINE_TO_HUMAN_NAME, \
     get_TABLES_COLUMN_MACHINE_TO_HUMAN_DESCRIPTION, TABLES_COLUMN_MACHINE_TO_HUMAN_NAME
-from dbcontroller.models import USED_TABLES
+from dbcontroller.models import USED_TABLES, get_upd_date_list
 
 
 def get_type_description(column: Column) -> str:
@@ -59,7 +59,7 @@ def get_description(column: Column) -> Dict[str, str]:
 
 
 def get_signs_for_column(column: Column) -> List[Dict[str, str]]:
-    if isinstance(column.type, String) or isinstance(column.type, Boolean):
+    if isinstance(column.type, String) or isinstance(column.type, Boolean) or column.name == 'upd_date':
         return [
             {'value': 'eq', 'name': '='},
         ]
@@ -82,11 +82,21 @@ def get_signs_for_column(column: Column) -> List[Dict[str, str]]:
 
 
 def get_suggestions_for_column(column: Column) -> List[Dict[str, str]]:
+    if column.name == 'upd_date':
+        return [
+            {'text': value, 'value': value} for value in get_upd_date_list()
+        ]
     if not isinstance(column.type, ChoiceType):
         return []
     return [
         {'text': name, 'value': value} for name, value in column.type.choices
     ]
+
+
+def get_column_text_type(column: Column) -> str:
+    if column.name == 'upd_date':
+        return 'multi'
+    return COLUMN_TYPE_TO_NAME[type(column.type)]
 
 
 def create_AskDict() -> Dict[str, Dict[str, Any]]:
@@ -100,7 +110,7 @@ def create_AskDict() -> Dict[str, Dict[str, Any]]:
                 'human_description': get_description(column),
                 'sign': get_signs_for_column(column),
                 'suggestions': get_suggestions_for_column(column),
-                'type': COLUMN_TYPE_TO_NAME[type(column.type)],
+                'type': get_column_text_type(column),
             }
     ask_dict.update(__update_AskDict_with_Inn())
     return ask_dict
@@ -119,7 +129,7 @@ def __update_AskDict_with_Inn() -> Dict[str, Any]:
                 'human_description': get_description(column),
                 'sign': get_signs_for_column(column),
                 'suggestions': get_suggestions_for_column(column),
-                'type': COLUMN_TYPE_TO_NAME[type(column.type)],
+                'type': get_column_text_type(column),
             }
     return ask_dict_updated
 
@@ -130,14 +140,21 @@ def __create_column_mapper() -> Dict[str, Column]:
         for column in table.__table__.columns:
             column_name_for_mapper = column.name
             if column.name in {'inn', 'upd_date'}:
-                column_name_for_mapper += '_' + table.__name__.lower()
-                if table.__name__.lower() == 'company':
+                column_name_for_mapper += '_' + column.table.name.lower()
+                if column.table.name.lower() == 'company':
                     column_mapper[column.name.lower()] = column
             column_mapper[column_name_for_mapper] = column
     return column_mapper
 
 
 COLUMN_MAPPER = __create_column_mapper()
+
+
+print()
+print(f'COLUMN_MAPPER {COLUMN_MAPPER.keys()}')
+print()
+print(f'create_AskDict().keys() {create_AskDict().keys()}')
+print()
 
 
 AGGREGATION_NAME_TO_FUNC = {

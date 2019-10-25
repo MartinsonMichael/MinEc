@@ -4,7 +4,7 @@ from sqlalchemy_utils.types.choice import ChoiceType
 from sqlalchemy import create_engine
 
 from dbcontroller.model_constants import REGION_TYPES, FEDERAL_TYPES, COMPANY_TYPE
-from dbcontroller.session_contoller import get_engine
+from dbcontroller.session_contoller import get_engine, session_scope
 
 Base = declarative_base()
 
@@ -14,11 +14,6 @@ INN_SIZE = 24
 class DateList(Base):
     __tablename__ = 'update_time'
     date = sqla.Column('upd_date', sqla.Date, primary_key=True)
-
-
-class InnStorage(Base):
-    __tablename__ = 'all_inns'
-    inn = sqla.Column('inns', sqla.String(INN_SIZE), primary_key=True)
 
 
 class Company(Base):
@@ -94,7 +89,12 @@ class BaseIncome(Base):
 
 
 USED_TABLES = [Company, TaxBase, BaseIncome, OKVED, EmployeeNum]
-ALL_TABLES = [Company, TaxBase, BaseIncome, OKVED, EmployeeNum, InnStorage, DateList]
+ALL_TABLES = [Company, TaxBase, BaseIncome, OKVED, EmployeeNum, DateList]
+
+
+def get_upd_date_list():
+    with session_scope() as session:
+        return session.query(DateList.date).all()
 
 
 Base.metadata.create_all(get_engine())

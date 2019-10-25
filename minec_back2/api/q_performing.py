@@ -1,14 +1,17 @@
 import datetime
 import itertools
-from typing import Dict, List, Any, Tuple, Type, Set
+from typing import Dict, List, Any, Tuple, Type, Set, Union
 import sqlalchemy as sqla
+import typing
+
+from traitlets import Integer
 
 from dbcontroller.model_support import \
     create_AskDict, \
     COLUMN_MAPPER, \
     get_human_headers, \
     __create_sqla_aggregation_expression
-from dbcontroller.models import Company, EmployeeNum, TaxBase, BaseIncome, USED_TABLES
+from dbcontroller.models import Company, EmployeeNum, TaxBase, BaseIncome, USED_TABLES, DateList
 from dbcontroller.session_contoller import session_scope
 
 SPLIT_SYMBOL = '#'
@@ -29,11 +32,12 @@ def parse_value(value, case):
         return [bool(value[0])]
 
     if case['type'] == 'multi':
-        print(value)
-        print(case)
-        new_value = [case['machine_mapper'][int(x)] for x in value]
-        print(new_value)
-        return [case['machine_mapper'][int(x)] for x in value]
+        if case['machine_name'] == 'upd_date':
+            value = [datetime.datetime.strptime(x, '%d.%m.%Y') for x in value]
+        else:
+            mapper = case['suggestions']
+            value = [[y['text'] for y in mapper if y['value'] == int(x)][0] for x in value]
+        return value
 
     if case['type'] == 'number':
         value = value[0].split(',')
@@ -81,7 +85,7 @@ def extract_params(options_dict: Dict[str, List[str]]) -> ParsedQuery:
                 'column_name': items[0],
                 'column_obj': COLUMN_MAPPER[items[0]],
                 'sign': items[1],
-                'values': parse_value(items[2:], ASK_DICT[items[0]]),
+                'value': parse_value(items[2:], ASK_DICT[items[0]]),
             })
         if key.startswith('aggregate'):
             text_query[AGGREGATE_KEY].append({
@@ -110,28 +114,30 @@ def extract_params(options_dict: Dict[str, List[str]]) -> ParsedQuery:
 #     return table_list_parsed_query
 
 
-def column_determiner(text_query: ParsedQuery) -> List[Dict[str, Any]]:
+def column_determiner(text_query: ParsedQuery, tables: List[str]) -> List[Dict[str, Any]]:
     if len(text_query[AGGREGATE_KEY]) > 0 or len(text_query[GROUP_KEY]) > 0:
         return [
             *[item for item in text_query[AGGREGATE_KEY]],
             *[item for item in text_query[GROUP_KEY]],
         ]
 
-    used_tables = []
+    used_tables = tables
     for item in text_query[FILTER_KEY]:
-        used_tables.append(ASK_DICT[item[0]]['table_name'])
+        used_tables.append(ASK_DICT[item['column_name']]['table_name'])
     used_tables = set(used_tables)
+    print(f'column_determiner -> used_tables: {used_tables}')
 
     if len(used_tables) == 0:
         used_tables.add('company')
 
     columns = []
     for column_name, info in ASK_DICT.items():
-        if info['table_name'] in used_tables:
+        if info['table_name'] in used_tables and (column_name != 'inn' and column_name != 'upd_date'):
             columns.append({
                 'column_name': column_name,
                 'column_obj': COLUMN_MAPPER[column_name],
             })
+    print(f'column determiner -> columns : {columns}')
     return columns
 
 
@@ -140,11 +146,24 @@ def get_tables_set(options_dict: Dict[str, List[str]], only_type: Set[str] = Non
         only_type = {'filter', 'groupby', 'aggregate'}
     tables = set()
     for key, value in options_dict.items():
-        if key not in only_type:
+        print(key)
+        if key == 'tables':
+            for we_need_this_table in options_dict['tables']:
+                tables.add(we_need_this_table.lower())
+
+        # FIXME!!!
+        flag = False
+        for item in only_type:
+            if key.startswith(item):
+                flag = True
+        if flag:
             continue
+
         column_name = value[0].split(SPLIT_SYMBOL)[0]
+        print(f'column_name : {column_name}')
         if column_name != 'inn' and column_name != 'upd_date':
             tables.add(ASK_DICT[column_name]['table_name'])
+    print(f'we will use tables: {tables}')
     return tables
 
 
@@ -213,10 +232,10 @@ def make_query(
 
 def get_query(options_dict: Dict[str, List[str]]) -> Tuple[List[Any], List[str]]:
     text_query = extract_params(options_dict)
-    column_list = column_determiner(text_query)
-
     print(f'text_query: {text_query}')
-    print(f'column list: {column_list}')
+
+    tables = get_tables_set(options_dict)
+    column_list = column_determiner(text_query, list(tables))
 
     return (
         make_query(text_query, column_list, options_dict),
