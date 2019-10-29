@@ -11,7 +11,7 @@ from dbcontroller.model_support import \
     COLUMN_MAPPER, \
     get_human_headers, \
     __create_sqla_aggregation_expression
-from dbcontroller.models import Company, EmployeeNum, TaxBase, BaseIncome, USED_TABLES, DateList
+from dbcontroller.models import Company, EmployeeNum, TaxBase, BaseIncome, USED_TABLES, DateList, USED_TABLES_NAME
 from dbcontroller.session_contoller import session_scope
 
 SPLIT_SYMBOL = '#'
@@ -69,8 +69,8 @@ def extract_params(options_dict: Dict[str, List[str]]) -> ParsedQuery:
         AGGREGATE_KEY: [],
     }
 
-    if len(get_tables_set(options_dict, {'aggregate', 'groupby'})) != 0:
-        tables = list(get_tables_set(options_dict, {'aggregate', 'groupby'}))
+    if len(get_tables_set(options_dict, {AGGREGATE_KEY, GROUP_KEY})) != 0:
+        tables = list(get_tables_set(options_dict, {AGGREGATE_KEY, GROUP_KEY}))
     else:
         tables = list(get_tables_set(options_dict))
     if len(tables) == 0:
@@ -131,8 +131,21 @@ def column_determiner(text_query: ParsedQuery, tables: List[str]) -> List[Dict[s
         used_tables.add('company')
 
     columns = []
+    inn_used_flag = {'inn': False, 'upd_date': False}
     for column_name, info in ASK_DICT.items():
-        if info['table_name'] in used_tables and (column_name != 'inn' and column_name != 'upd_date'):
+        if column_name.startswith('inn'):
+            if inn_used_flag['inn']:
+                continue
+            else:
+                inn_used_flag['inn'] = True
+
+        if column_name.startswith('upd_date'):
+            if inn_used_flag['upd_date']:
+                continue
+            else:
+                inn_used_flag['upd_date'] = True
+
+        if info['table_name'] in used_tables:
             columns.append({
                 'column_name': column_name,
                 'column_obj': COLUMN_MAPPER[column_name],
@@ -143,45 +156,46 @@ def column_determiner(text_query: ParsedQuery, tables: List[str]) -> List[Dict[s
 
 def get_tables_set(options_dict: Dict[str, List[str]], only_type: Set[str] = None) -> Set[str]:
     if only_type is None:
-        only_type = {'filter', 'groupby', 'aggregate'}
+        only_type = {FILTER_KEY, GROUP_KEY, AGGREGATE_KEY}
     tables = set()
     for key, value in options_dict.items():
-        print(key)
+
         if key == 'tables':
             for we_need_this_table in options_dict['tables']:
                 tables.add(we_need_this_table.lower())
             continue
 
         # FIXME!!!
-        flag = False
-        for item in only_type:
-            if key.startswith(item):
-                flag = True
-        if flag:
-            continue
-
-        # FIXME!!!
         flag = True
-        for item in {'filter', 'groupby', 'aggregate'}:
+        for item in only_type:
             if key.startswith(item):
                 flag = False
         if flag:
             continue
 
+        # FIXME!!!
+        flag = True
+        for item in {FILTER_KEY, AGGREGATE_KEY, GROUP_KEY}:
+            if key.startswith(item):
+                flag = False
+        if flag:
+            continue
 
         column_name = value[0].split(SPLIT_SYMBOL)[0]
-        print(f'column_name : {column_name}')
         if column_name != 'inn' and column_name != 'upd_date':
             tables.add(ASK_DICT[column_name]['table_name'])
+
+    print(f'for only types: {only_type}')
     print(f'we will use tables: {tables}')
     return tables
 
 
-def get_joining_filter(options_dict:  Dict[str, List[str]]):
+def get_joining_filter(options_dict: Dict[str, List[str]]):
     tables = get_tables_set(options_dict)
     filter_and = []
-    for table_pair in itertools.combinations(USED_TABLES, 2):
-        name_pair = {table_pair[0].__name__, table_pair[1].__name__}
+    for combined_table_pair in itertools.combinations(zip(USED_TABLES_NAME, USED_TABLES), 2):
+        name_pair = {combined_table_pair[0][0], combined_table_pair[1][0]}
+        table_pair = [combined_table_pair[0][1], combined_table_pair[1][1]]
         if tables & name_pair == name_pair:
             filter_and.append(sqla.and_(
                 table_pair[0].inn == table_pair[1].inn,

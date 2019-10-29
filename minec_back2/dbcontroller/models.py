@@ -88,6 +88,7 @@ class BaseIncome(Base):
     outcome = sqla.Column('outcome', sqla.Float)
 
 
+USED_TABLES_NAME = ['company', 'taxes', 'income', 'okved', 'employee']
 USED_TABLES = [Company, TaxBase, BaseIncome, OKVED, EmployeeNum]
 ALL_TABLES = [Company, TaxBase, BaseIncome, OKVED, EmployeeNum, DateList]
 
