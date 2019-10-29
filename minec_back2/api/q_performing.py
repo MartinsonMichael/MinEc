@@ -2,16 +2,13 @@ import datetime
 import itertools
 from typing import Dict, List, Any, Tuple, Type, Set, Union
 import sqlalchemy as sqla
-import typing
-
-from traitlets import Integer
 
 from dbcontroller.model_support import \
     create_AskDict, \
     COLUMN_MAPPER, \
     get_human_headers, \
     __create_sqla_aggregation_expression
-from dbcontroller.models import Company, EmployeeNum, TaxBase, BaseIncome, USED_TABLES, DateList, USED_TABLES_NAME
+from dbcontroller.models import USED_TABLES, USED_TABLES_NAME
 from dbcontroller.session_contoller import session_scope
 
 SPLIT_SYMBOL = '#'
@@ -116,10 +113,10 @@ def extract_params(options_dict: Dict[str, List[str]]) -> ParsedQuery:
 
 def column_determiner(text_query: ParsedQuery, tables: List[str]) -> List[Dict[str, Any]]:
     if len(text_query[AGGREGATE_KEY]) > 0 or len(text_query[GROUP_KEY]) > 0:
-        return [
-            *[item for item in text_query[AGGREGATE_KEY]],
+        return sort_columns([
             *[item for item in text_query[GROUP_KEY]],
-        ]
+            *[item for item in text_query[AGGREGATE_KEY]],
+        ])
 
     used_tables = tables
     for item in text_query[FILTER_KEY]:
@@ -133,6 +130,10 @@ def column_determiner(text_query: ParsedQuery, tables: List[str]) -> List[Dict[s
     columns = []
     inn_used_flag = {'inn': False, 'upd_date': False}
     for column_name, info in ASK_DICT.items():
+
+        if info['table_name'] not in used_tables:
+            continue
+
         if column_name.startswith('inn'):
             if inn_used_flag['inn']:
                 continue
@@ -145,13 +146,23 @@ def column_determiner(text_query: ParsedQuery, tables: List[str]) -> List[Dict[s
             else:
                 inn_used_flag['upd_date'] = True
 
-        if info['table_name'] in used_tables:
-            columns.append({
-                'column_name': column_name,
-                'column_obj': COLUMN_MAPPER[column_name],
-            })
+        columns.append({
+            'column_name': column_name,
+            'column_obj': COLUMN_MAPPER[column_name],
+        })
     print(f'column determiner -> columns : {columns}')
-    return columns
+    return sort_columns(columns)
+
+
+def sort_columns(column_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def key_extractor(x):
+        print(x)
+        if x['column_name'].startswith('inn') or x['column_name'].startswith('upd_date'):
+            return 0, x['column_name']
+        return len(x['column_name']), x['column_name']
+
+    column_list.sort(key=key_extractor)
+    return column_list
 
 
 def get_tables_set(options_dict: Dict[str, List[str]], only_type: Set[str] = None) -> Set[str]:
@@ -186,6 +197,8 @@ def get_tables_set(options_dict: Dict[str, List[str]], only_type: Set[str] = Non
             tables.add(ASK_DICT[column_name]['table_name'])
 
     print(f'for only types: {only_type}')
+    if len(tables) == 0:
+        tables.add('company')
     print(f'we will use tables: {tables}')
     return tables
 
