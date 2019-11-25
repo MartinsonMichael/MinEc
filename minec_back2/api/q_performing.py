@@ -264,7 +264,7 @@ def make_query(
 
         # FIXME limit for debugging
         if 'file' not in options_dict.keys():
-            query = query.limit(50 * 100)
+            query = query.limit(200)
         return query.all()
 
 

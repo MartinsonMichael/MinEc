@@ -1,6 +1,11 @@
 import datetime
 import json
+import csv
+import os
+from typing import Tuple
+
 from django.http import HttpResponse, StreamingHttpResponse
+from django.utils.encoding import smart_str
 from sqlalchemy_utils import Choice
 
 from api.q_performing import get_query
@@ -35,14 +40,15 @@ def get_ask_dict(request):
 
 
 def perform_api(request):
+    ticket = datetime.datetime.timestamp(datetime.datetime.now())
     options = dict(request.GET)
 
     query, human_header = get_query(options)
 
     if 'file' in options.keys():
-        return send_as_file(query, human_header)
+        return send_as_file(query, human_header, ticket)
 
-    return send_as_content(query, human_header)
+    return send_as_content(query, human_header, ticket)
 
 
 def serializer(x):
@@ -58,7 +64,7 @@ def stringifier(x):
     return str(x)
 
 
-def send_as_content(query, header):
+def send_as_content(query, header, ticket):
     response = get_template_HTTP_RESPONSE()
     response.content = json.dumps({
         'table_human_header': json.dumps(header),
@@ -67,19 +73,39 @@ def send_as_content(query, header):
     return response
 
 
-def send_as_file(query, header):
+def write_as_csv_file(query, header, ticket) -> Tuple[str, str]:
+    file_name = f'data_{ticket}.csv'
+    file_path = os.path.join('home', 'michael', 'sent_files', file_name)
+    with open(file_path, 'w', newline='') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(header)
+        for line in query:
+            writer.writerow([stringifier(x) for x in line])
+    return file_path, file_name
 
-    response = StreamingHttpResponse(
-        [
-            ','.join(header) + '\n',
-            *list(map(
-                lambda line: ','.join([stringifier(item) for item in line]) + '\n',
-                query
-            ))
-        ],
-        content_type="text/csv"
-    )
+
+def send_as_file(query, header, ticket):
+    file_path, file_name = write_as_csv_file(query, header, ticket)
+
+    response = HttpResponse(content='application/force-download')  # mimetype is replaced by content_type for django 1.7
     response["Access-Control-Allow-Origin"] = '*'
-    response['Content-Disposition'] = f'attachment; filename=data.csv'
-
+    response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(file_name)
+    response['X-Sendfile'] = smart_str(file_path)
+    # It's usually a good idea to set the 'Content-Length' header too.
+    # You can also set any other required headers: Cache-Control, etc.
     return response
+
+    # response = StreamingHttpResponse(
+    #     [
+    #         ','.join(header) + '\n',
+    #         *list(map(
+    #             lambda line: ','.join([stringifier(item) for item in line]) + '\n',
+    #             query
+    #         ))
+    #     ],
+    #     content_type="text/csv"
+    # )
+    # response["Access-Control-Allow-Origin"] = '*'
+    # response['Content-Disposition'] = f'attachment; filename=data.csv'
+    #
+    # return response
