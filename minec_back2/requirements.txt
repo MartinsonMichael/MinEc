@@ -7,7 +7,7 @@ chardet==3.0.4
 dateparser==0.7.1
 decorator==4.4.0
 defusedxml==0.6.0
-Django==2.1.7
+Django==2.1.11
 django-bootstrap3==11.0.0
 django-filter==2.1.0
 django-queryset-csv==1.0.2
@@ -71,7 +71,7 @@ tqdm==4.31.1
 traitlets==4.3.2
 tzlocal==1.5.1
 unicodecsv==0.14.1
-urllib3==1.24.1
+urllib3==1.25.6
 uWSGI==2.0.18
 wcwidth==0.1.7
 webencodings==0.5.1
