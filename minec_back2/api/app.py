@@ -75,8 +75,9 @@ def __sub_perform_api(request, ticket: str):
 
     write_as_csv_file(query, human_header, ticket)
 
+
 def serializer(x):
-    if isinstance(x, datetime.date):
+    if isinstance(x, datetime):
         return str(x.day) + '.' + str(x.month) + '.' + str(x.year)
     if isinstance(x, Choice):
         return x.code
