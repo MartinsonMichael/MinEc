@@ -20,6 +20,11 @@ const addr = '84.201.147.95';
 
 const spase = '#';
 
+function address_maker(line) {
+    const address = `84.201.147.95:${line}`
+    console.log(`send request to address: ${address}`)
+    return address
+}
 
 class Main extends Component {
 
@@ -136,7 +141,7 @@ class Main extends Component {
 
       if (!this.state.is_file) {
           axios.get(
-              ''.concat('http://', addr, '/api/get'), {
+              ''.concat(address_maker('/api/get')), {
                   params: params,
                   timeout: 60 * 60 * 1000
               })
@@ -147,7 +152,7 @@ class Main extends Component {
       }
       else{
           axios(
-              ''.concat('http://', addr, '/api/get/file/'), {
+              ''.concat(address_maker('/api/get/file/')), {
               params: params,
               method: 'GET',
               responseType: 'blob', // important
@@ -170,7 +175,7 @@ class Main extends Component {
 
   get_update_date(){
     axios.get(
-      ''.concat('http://', addr, '/api/get_updates_dates')
+      ''.concat(address_maker('/api/get_updates_dates'))
     )
       .then((res) => this.onLoadQuery(res))
       .catch(function (error) {
@@ -241,7 +246,7 @@ class Main extends Component {
 
   loadSingleTable() {
       axios(
-          ''.concat('http://', addr, '/api/get/single/'), {
+          ''.concat(address_maker('/api/get/single/')), {
           params: {
               tables: this.state.tableToLoad,
               filter: `upd_date${spase}eq${spase}${this.state.dateToLoadTable}${spase}`,
@@ -469,7 +474,7 @@ class App extends Component {
 
     componentWillMount() {
         axios.get(
-            ''.concat('http://', addr,'/api/get_ask_dict'), {
+            ''.concat(address_maker('/api/get_ask_dict')), {
           })
           .then((res) => this.on_ASK_DICT_load(res))
           .catch(function (error) {
