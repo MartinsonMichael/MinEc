@@ -2,7 +2,9 @@ from decorator import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-engine = create_engine('postgresql://michael:123@db/minec_base_3')
+psycorg_connect_string = 'postgresql://michael:123@db/minec_base_3'
+
+engine = create_engine(psycorg_connect_string)
 Session = sessionmaker(bind=engine, autoflush=True, autocommit=False)
 
 
@@ -16,12 +18,26 @@ def test_db_connection():
     print('rows count in TaxBase:')
     with session_scope() as session:
         cnt = session.query(sqla.func.count(TaxBase.inn)).all()
-        print(cnt)
 
 
 @contextmanager
 def session_scope():
     session = Session()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+@contextmanager
+def sub_session_scope():
+    engine2 = create_engine(psycorg_connect_string)
+    Session2 = sessionmaker(bind=engine, autoflush=True, autocommit=False)
+    session = Session2()
     try:
         yield session
         session.commit()

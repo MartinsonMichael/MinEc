@@ -3,7 +3,7 @@ import json
 import csv
 import os
 import time
-from typing import Tuple
+from typing import Tuple, Any, Optional
 from multiprocessing import Process
 
 from django.http import HttpResponse, StreamingHttpResponse
@@ -13,7 +13,10 @@ from sqlalchemy_utils import Choice
 from api.q_performing import get_query
 from dbcontroller.model_support import create_AskDict
 from dbcontroller.models import TicketTable
-from dbcontroller.session_contoller import session_scope
+from dbcontroller.session_contoller import session_scope, sub_session_scope
+
+
+FILE_STORAGE = os.path.join('/', 'home', 'michael', 'sent_files')
 
 
 def get_template_HTTP_RESPONSE():
@@ -23,7 +26,6 @@ def get_template_HTTP_RESPONSE():
 
 
 def get_ask_dict(request):
-
     # with session_scope() as session:
     #     session.add(DateList(date=datetime.strptime('18.10.2019', '%d.%m.%Y')))
 
@@ -42,28 +44,99 @@ def get_ask_dict(request):
     return resp
 
 
-def get_ticket() -> str:
+def get_ticket_status(request):
+    response = get_template_HTTP_RESPONSE()
+    ticket_id = dict(request.GET)['ticket_id'][0]
+
+    print(f'ticket id : {ticket_id}')
+
+    ticket = get_ticket(ticket_id)
+    response.content = json.dumps({
+        'ticket_id': ticket['ticket_id'],
+        'ticket_status': ticket['status'],
+    })
+    return response
+
+
+def get_ticket(ticket_id):
+    with sub_session_scope() as session:
+        ticket = (
+            session
+                .query(
+                     TicketTable.ticket_id,
+                     TicketTable.status,
+                     TicketTable.file_name,
+                     TicketTable.file_path,
+                     TicketTable.query_options
+                )
+                .filter(TicketTable.ticket_id == ticket_id)
+                .first()
+        )
+
+    ticket = {k: v for k, v in zip(['ticket_id', 'status', 'file_name', 'file_path', 'query_options'], ticket)}
+    print(ticket)
+    return ticket
+
+
+def create_ticket(options: Any) -> str:
     ticket = str(int(time.mktime(datetime.now().timetuple())))
     with session_scope() as session:
         session.add(TicketTable(
             ticket_id=ticket,
             status='created',
+            file_path='',
+            query_options=json.dumps(options),
         ))
     return ticket
 
 
-def set_ticket_status(ticket_id: str, status: str):
+def try_to_update_ticket_status(*args, **kwargs):
+    times = 0
+    while True:
+        try:
+            set_ticket_status(*args, **kwargs)
+            print('status was successfully updated')
+            break
+        except:
+            print('status update failed')
+            times += 1
+            time.sleep(5)
+
+        if times > 10:
+            break
+
+
+def set_ticket_status(
+        ticket_id: str,
+        status: Optional[str] = None,
+        file_name: Optional[str] = None,
+        file_path: Optional[str] = None
+):
     with session_scope() as session:
-        ticket_obj = session.query.filter_by(TicketTable.ticket_id == ticket_id).one_on_none()
+        ticket_obj = session.query(TicketTable).filter(TicketTable.ticket_id == ticket_id).first()
+
+        if ticket_obj is None:
+            raise ValueError('fuck this shit')
+
+        if status is not None:
+            ticket_obj.status = status
+        if file_path is not None:
+            ticket_obj.file_path = file_path
+        if file_name is not None:
+            ticket_obj.file_name = file_name
 
 
 def perform_api(request):
-    ticket = get_ticket()
-    Process(target=__sub_perform_api, args=(request, ticket)).start()
+    options = dict(request.GET)
+    ticket_id = create_ticket(options)
+
+    Process(target=__sub_perform_api, args=(request, ticket_id)).start()
+
+    # __sub_perform_api(request, ticket_id)
 
     response = get_template_HTTP_RESPONSE()
     response.content = json.dumps({
-        'ticket': ticket
+        'ticket': ticket_id
     })
     return response
 
@@ -71,9 +144,22 @@ def perform_api(request):
 def __sub_perform_api(request, ticket: str):
     options = dict(request.GET)
 
-    query, human_header = get_query(options)
+    try_to_update_ticket_status(ticket, 'start perform query')
 
-    write_as_csv_file(query, human_header, ticket)
+    try:
+        query, human_header = get_query(options)
+    except:
+        try_to_update_ticket_status(ticket, 'error while performing query')
+        return
+
+    try_to_update_ticket_status(ticket, 'start write to file')
+    try:
+        write_as_csv_file(query, human_header, ticket)
+    except:
+        try_to_update_ticket_status(ticket, 'error while wring to file')
+        return
+
+    set_ticket_status(ticket, 'ready')
 
 
 def serializer(x):
@@ -89,8 +175,39 @@ def stringifier(x):
     return str(x)
 
 
-def send_as_content(query, header, ticket):
+def write_as_csv_file(query, header, ticket_id):
+    if not os.path.exists(FILE_STORAGE):
+        os.makedirs(FILE_STORAGE)
+
+    file_name = f'data_{ticket_id}.csv'
+    file_path = os.path.join(FILE_STORAGE, file_name)
+    with open(file_path, 'w+') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(header)
+        for line in query:
+            writer.writerow([stringifier(x) for x in line])
+    try_to_update_ticket_status(ticket_id, file_path=file_path, file_name=file_name)
+
+
+def get_ticket_content(request):
+    ticket_id = dict(request.GET)['ticket_id'][0]
+    ticket = get_ticket(ticket_id)
+    if 'file' in json.loads(ticket['query_options']).keys():
+        return send_as_file(ticket['file_path'], ticket['file_name'])
+    else:
+        return send_as_content(ticket['file_path'], ticket['file_name'])
+
+
+def send_as_content(file_path, file_name):
     response = get_template_HTTP_RESPONSE()
+
+    with open(file_path, 'r') as csv_file:
+        reader = csv.reader(csv_file, delimiter=',', quotechar='"')
+        header = next(reader)
+        query = []
+        for line in reader:
+            query.append(line)
+
     response.content = json.dumps({
         'table_human_header': json.dumps(header),
         'table_body': json.dumps(query, default=serializer),
@@ -98,22 +215,12 @@ def send_as_content(query, header, ticket):
     return response
 
 
-def write_as_csv_file(query, header, ticket) -> Tuple[str, str]:
-    file_name = f'data_{ticket}.csv'
-    file_path = os.path.join('home', 'michael', 'sent_files', file_name)
-    with open(file_path, 'w+') as csv_file:
-        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(header)
-        for line in query:
-            writer.writerow([stringifier(x) for x in line])
-    return file_path, file_name
-
-
-def send_as_file(query, header, ticket):
-    file_path, file_name = write_as_csv_file(query, header, ticket)
-
-    response = HttpResponse(content='application/force-download')
+def send_as_file(file_path, file_name):
+    response = HttpResponse(content_type='application/force-download')
     response["Access-Control-Allow-Origin"] = '*'
+    response.content = json.dumps({
+        'file': f'http://localhost/{file_path}'
+    })
     response['Content-Disposition'] = f'attachment; filename={smart_str(file_name)}'
     response['X-Sendfile'] = smart_str(file_path)
     # It's usually a good idea to set the 'Content-Length' header too.

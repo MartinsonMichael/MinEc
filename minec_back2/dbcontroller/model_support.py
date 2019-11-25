@@ -150,11 +150,11 @@ def __create_column_mapper() -> Dict[str, Column]:
 COLUMN_MAPPER = __create_column_mapper()
 
 
-print()
-print(f'COLUMN_MAPPER {COLUMN_MAPPER.keys()}')
-print()
-print(f'create_AskDict().keys() {create_AskDict().keys()}')
-print()
+# print()
+# print(f'COLUMN_MAPPER {COLUMN_MAPPER.keys()}')
+# print()
+# print(f'create_AskDict().keys() {create_AskDict().keys()}')
+# print()
 
 
 AGGREGATION_NAME_TO_FUNC = {
