@@ -11,6 +11,12 @@ Base = declarative_base()
 INN_SIZE = 24
 
 
+class TicketTable(Base):
+    ticket_id = sqla.Column('ticket_id', sqla.String(30), primary_key=True)
+    status = sqla.Column('status', sqla.String(30))
+    file_path = sqla.Column('file_path', sqla.String(150))
+
+
 class DateList(Base):
     __tablename__ = 'update_time'
     date = sqla.Column('upd_date', sqla.Date, primary_key=True)

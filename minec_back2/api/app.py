@@ -1,8 +1,10 @@
-import datetime
+from datetime import datetime
 import json
 import csv
 import os
+import time
 from typing import Tuple
+from multiprocessing import Process
 
 from django.http import HttpResponse, StreamingHttpResponse
 from django.utils.encoding import smart_str
@@ -10,7 +12,8 @@ from sqlalchemy_utils import Choice
 
 from api.q_performing import get_query
 from dbcontroller.model_support import create_AskDict
-
+from dbcontroller.models import TicketTable
+from dbcontroller.session_contoller import session_scope
 
 
 def get_template_HTTP_RESPONSE():
@@ -22,7 +25,7 @@ def get_template_HTTP_RESPONSE():
 def get_ask_dict(request):
 
     # with session_scope() as session:
-    #     session.add(DateList(date=datetime.datetime.strptime('18.10.2019', '%d.%m.%Y')))
+    #     session.add(DateList(date=datetime.strptime('18.10.2019', '%d.%m.%Y')))
 
     resp = get_template_HTTP_RESPONSE()
     askDict = create_AskDict()
@@ -39,20 +42,41 @@ def get_ask_dict(request):
     return resp
 
 
+def get_ticket() -> str:
+    ticket = str(int(time.mktime(datetime.now().timetuple())))
+    with session_scope() as session:
+        session.add(TicketTable(
+            ticket_id=ticket,
+            status='created',
+        ))
+    return ticket
+
+
+def set_ticket_status(ticket_id: str, status: str):
+    with session_scope() as session:
+        
+
+
 def perform_api(request):
-    ticket = datetime.datetime.timestamp(datetime.datetime.now())
+    ticket = get_ticket()
+    Process(target=__sub_perform_api, args=(request, ticket)).start()
+
+    response = get_template_HTTP_RESPONSE()
+    response.content = json.dumps({
+        'ticket': ticket
+    })
+    return response
+
+
+def __sub_perform_api(request, ticket: str):
     options = dict(request.GET)
 
     query, human_header = get_query(options)
 
-    if 'file' in options.keys():
-        return send_as_file(query, human_header, ticket)
-
-    return send_as_content(query, human_header, ticket)
-
+    write_as_csv_file(query, human_header, ticket)
 
 def serializer(x):
-    if isinstance(x, (datetime.datetime, datetime.date)):
+    if isinstance(x, (datetime, datetime.date)):
         return str(x.day) + '.' + str(x.month) + '.' + str(x.year)
     if isinstance(x, Choice):
         return x.code
