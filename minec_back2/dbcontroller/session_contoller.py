@@ -10,6 +10,15 @@ def get_engine():
     return engine
 
 
+def test_db_connection():
+    import sqlalchemy as sqla
+    from dbcontroller.models import TaxBase
+    print('rows count in TaxBase:')
+    with session_scope() as session:
+        cnt = session.query(sqla.func.count(TaxBase.inn)).all()
+        print(cnt)
+
+
 @contextmanager
 def session_scope():
     session = Session()
