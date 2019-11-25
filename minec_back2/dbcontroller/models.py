@@ -12,6 +12,7 @@ INN_SIZE = 24
 
 
 class TicketTable(Base):
+    __tablename__ = 'tickets'
     ticket_id = sqla.Column('ticket_id', sqla.String(30), primary_key=True)
     status = sqla.Column('status', sqla.String(30))
     file_path = sqla.Column('file_path', sqla.String(150))

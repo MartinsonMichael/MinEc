@@ -54,7 +54,7 @@ def get_ticket() -> str:
 
 def set_ticket_status(ticket_id: str, status: str):
     with session_scope() as session:
-        
+        ticket_obj = session.query.filter_by(TicketTable.ticket_id == ticket_id).one_on_none()
 
 
 def perform_api(request):
