@@ -21,7 +21,7 @@ const addr = '84.201.147.95';
 const spase = '#';
 
 function address_maker(line) {
-    const address = `84.201.147.95:${line}`
+    const address = `http://84.201.147.95:${line}`
     console.log(`send request to address: ${address}`)
     return address
 }
