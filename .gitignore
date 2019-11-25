@@ -8,6 +8,7 @@ minec_back/buffer/*
 minec_back2/data/*
 MinEc_prod/*
 stuff/*
+minec_back/
  
 # C extensions
 *.so

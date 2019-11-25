@@ -26,7 +26,7 @@ class AbstractFiller:
         for i, xml_file in enumerate(os.listdir(folder_name)):
             if self.steps is not None and i >= self.steps:
                 break
-            if q_add.filter(file_name=xml_file).count() == 0:
+            if True or q_add.filter(file_name=xml_file).count() == 0:
                 try:
                     cur_items = self.parse_file(os.path.join(folder_name, xml_file))
                     to_create.extend(cur_items)
@@ -170,6 +170,8 @@ class AbstractFiller:
             for item in soup.find_all('Документ'):
                 inn = AbstractFiller.get_inn(item)
                 inn_list.append(inn)
+            if i % 100 == 99:
+                print(f'step : {i}')
             if i % 1000 == 999:
                 pickle.dump(inn_list, open(f'inn_list__{self.cur_model.__name__}__{i}', 'wb'))
         pickle.dump(inn_list, open(f'inn_list__{self.cur_model.__name__}__all', 'wb'))
