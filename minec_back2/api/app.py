@@ -76,7 +76,7 @@ def send_as_content(query, header, ticket):
 def write_as_csv_file(query, header, ticket) -> Tuple[str, str]:
     file_name = f'data_{ticket}.csv'
     file_path = os.path.join('home', 'michael', 'sent_files', file_name)
-    with open(file_path, 'w', newline='') as csv_file:
+    with open(file_path, 'w+') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(header)
         for line in query:
@@ -87,9 +87,9 @@ def write_as_csv_file(query, header, ticket) -> Tuple[str, str]:
 def send_as_file(query, header, ticket):
     file_path, file_name = write_as_csv_file(query, header, ticket)
 
-    response = HttpResponse(content='application/force-download')  # mimetype is replaced by content_type for django 1.7
+    response = HttpResponse(content='application/force-download')
     response["Access-Control-Allow-Origin"] = '*'
-    response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(file_name)
+    response['Content-Disposition'] = f'attachment; filename={smart_str(file_name)}'
     response['X-Sendfile'] = smart_str(file_path)
     # It's usually a good idea to set the 'Content-Length' header too.
     # You can also set any other required headers: Cache-Control, etc.
