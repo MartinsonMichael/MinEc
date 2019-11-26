@@ -149,7 +149,7 @@ class Main extends Component {
       console.log(response.data.ticket)
       const timerId = setTimeout(
           this.ticketChecker,
-          CHECK_TIMEOUT * (this.state.ticked_with_file ? 60 : 20),
+          CHECK_TIMEOUT * (this.state.ticked_with_file ? 3 : 3),
           response.data.ticket
       )
       this.setState({ticket_id: response.data.ticket, timerId: timerId})
@@ -189,7 +189,7 @@ class Main extends Component {
   contentLoader(ticket_id) {
       axios.get(
           ''.concat(address_maker('/api/content')), {
-              params: {ticket_id: ticket_id},
+              params: {ticket_id: ticket_id, file: 0},
               timeout: 10 * 1000,
           })
           .then(this.onLoadQuery)
@@ -209,7 +209,7 @@ class Main extends Component {
 
         axios(
               ''.concat(address_maker('/api/content')), {
-              params: {ticket_id: ticket_id},
+              params: {ticket_id: ticket_id, file: 1},
               timeout: 100 * 1000,
               method: 'GET',
               responseType: 'blob',

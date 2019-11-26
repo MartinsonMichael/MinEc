@@ -52,31 +52,39 @@ def get_ticket_status(request):
 
     print(f'ticket id : {ticket_id}')
 
-    ticket = get_ticket(ticket_id)
+    try:
+        file_name = f'status_{ticket_id}.csv'
+        file_path = os.path.join(FILE_STORAGE, file_name)
+        with open(file_path, 'r') as file:
+            status = file.readline()
+    except:
+        status = 'undefined'
+
+    # ticket = get_ticket(ticket_id)
     response.content = json.dumps({
-        'ticket_id': ticket['ticket_id'],
-        'ticket_status': ticket['status'],
+        'ticket_id': ticket_id,
+        'ticket_status': status,
     })
     return response
 
 
-def get_ticket(ticket_id):
-    with sub_session_scope() as session:
-        ticket = (
-            session
-                .query(
-                     TicketTable.ticket_id,
-                     TicketTable.status,
-                     TicketTable.file_path,
-                     TicketTable.query_options
-                )
-                .filter(TicketTable.ticket_id == ticket_id)
-                .first()
-        )
-
-    ticket = {k: v for k, v in zip(['ticket_id', 'status', 'file_path', 'query_options'], ticket)}
-    print(ticket)
-    return ticket
+# def get_ticket(ticket_id):
+#     with sub_session_scope() as session:
+#         ticket = (
+#             session
+#                 .query(
+#                      TicketTable.ticket_id,
+#                      TicketTable.status,
+#                      TicketTable.file_path,
+#                      TicketTable.query_options
+#                 )
+#                 .filter(TicketTable.ticket_id == ticket_id)
+#                 .first()
+#         )
+#
+#     ticket = {k: v for k, v in zip(['ticket_id', 'status', 'file_path', 'query_options'], ticket)}
+#     print(ticket)
+#     return ticket
 
 
 def create_ticket(options: Any) -> str:
@@ -91,37 +99,44 @@ def create_ticket(options: Any) -> str:
     return ticket
 
 
-def try_to_update_ticket_status(*args, **kwargs):
-    times = 0
-    while True:
-        try:
-            set_ticket_status(*args, **kwargs)
-            print('status was successfully updated')
-            break
-        except:
-            print('status update failed')
-            times += 1
-            time.sleep(5)
+def try_to_update_ticket_status(ticket_id: str,status: str):
+    file_name = f'status_{ticket_id}.csv'
+    file_path = os.path.join(FILE_STORAGE, file_name)
+    if os.path.exists(file_path):
+        os.remove(file_path)
 
-        if times > 10:
-            break
+    with open(file_path, 'w+') as file:
+        file.write(status)
+    # times = 0
+    # while True:
+    #     try:
+    #         set_ticket_status(*args, **kwargs)
+    #         print('status was successfully updated')
+    #         break
+    #     except:
+    #         print('status update failed')
+    #         times += 1
+    #         time.sleep(5)
+    #
+    #     if times > 10:
+    #         break
 
 
-def set_ticket_status(
-        ticket_id: str,
-        status: Optional[str] = None,
-        file_path: Optional[str] = None
-):
-    with session_scope() as session:
-        ticket_obj = session.query(TicketTable).filter(TicketTable.ticket_id == ticket_id).first()
-
-        if ticket_obj is None:
-            raise ValueError('fuck this shit')
-
-        if status is not None:
-            ticket_obj.status = status
-        if file_path is not None:
-            ticket_obj.file_path = file_path
+# def set_ticket_status(
+#         ticket_id: str,
+#         status: Optional[str] = None,
+#         file_path: Optional[str] = None
+# ):
+#     with session_scope() as session:
+#         ticket_obj = session.query(TicketTable).filter(TicketTable.ticket_id == ticket_id).first()
+#
+#         if ticket_obj is None:
+#             raise ValueError('fuck this shit')
+#
+#         if status is not None:
+#             ticket_obj.status = status
+#         if file_path is not None:
+#             ticket_obj.file_path = file_path
 
 
 def perform_api(request):
@@ -150,24 +165,28 @@ def __sub_perform_api(request, ticket_id: str):
     file_path = os.path.join(FILE_STORAGE, file_name)
 
     try_to_update_ticket_status(ticket_id, 'start perform query')
-
     try:
         get_query(options, ticket_id, file_path)
-        try_to_update_ticket_status(ticket_id, file_path=file_path)
+        # try_to_update_ticket_status(ticket_id)
     except:
         try_to_update_ticket_status(ticket_id, 'error while performing query')
         return
 
-    set_ticket_status(ticket_id, 'ready')
+    try_to_update_ticket_status(ticket_id, 'ready')
 
 
 def get_ticket_content(request):
     ticket_id = dict(request.GET)['ticket_id'][0]
-    ticket = get_ticket(ticket_id)
-    if 'file' in json.loads(ticket['query_options']).keys():
-        return send_as_file(ticket['file_path'])
+    is_file = int(dict(request.GET)['file'][0]) == 1
+    # ticket = get_ticket(ticket_id)
+
+    file_name = f'data_{ticket_id}.csv'
+    file_path = os.path.join(FILE_STORAGE, file_name)
+
+    if is_file:
+        return send_as_file(file_path)
     else:
-        return send_as_content(ticket['file_path'])
+        return send_as_content(file_path)
 
 
 def send_as_content(file_path):
