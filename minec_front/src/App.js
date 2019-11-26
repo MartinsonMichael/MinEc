@@ -49,6 +49,7 @@ class Main extends Component {
           ticket_id: undefined,
           ticked_with_file: undefined,
           timer_Id: undefined,
+          loading: false,
       };
 
       this.onFileLoadSelect = this.onFileLoadSelect.bind(this);
@@ -165,18 +166,18 @@ class Main extends Component {
               const ticket_obj = response.data
               this.setState({app_state: ticket_obj.ticket_status})
               if (ticket_obj.ticket_status === 'ready') {
-                  this.setState({app_state: 'Готово. Загрузка таблизы...'})
-                  if (!this.state.is_file) {
-                      this.contentLoader()
+                  this.setState({app_state: 'Готово'})
+                  if (!this.state.ticked_with_file) {
+                      this.contentLoader(this.state.ticket_id)
                   } else {
-                      this.fileLoader()
+                      this.fileLoader(this.state.ticket_id)
                   }
-                  this.setState({ticket_id: undefined})
+                  this.setState({loading: false})
               } else {
                   if (ticket_obj.ticket_status.slice(0, 5) !== 'error') {
                       setTimeout(this.ticketChecker, CHECK_TIMEOUT, ticket_id)
                   } else{
-                      this.setState({ticket_id: undefined})
+                      this.setState({loading: false})
                   }
               }
           })
@@ -185,10 +186,10 @@ class Main extends Component {
           });
   }
 
-  contentLoader() {
+  contentLoader(ticket_id) {
       axios.get(
           ''.concat(address_maker('/api/content')), {
-              params: {ticket_id: this.state.ticket_id},
+              params: {ticket_id: ticket_id},
               timeout: 10 * 1000,
           })
           .then(this.onLoadQuery)
@@ -197,7 +198,7 @@ class Main extends Component {
           });
   }
 
-  fileLoader(ticket_id) {
+  fileLoader(ticket_id, deep = 0) {
         // const fileStream = streamSaver.createWriteStream('data.csv', {
         //     size: 22, // (optional) Will show progress
         //     writableStrategy: undefined, // (optional)
@@ -214,8 +215,11 @@ class Main extends Component {
               responseType: 'blob',
           })
         .catch(function (error) {
-            this.setState({ticket_id: undefined})
-              console.log(error);
+            console.log(error);
+            // if (deep < 5){
+            //     this.fileLoader(ticket_id, deep + 1)
+            // }
+
         })
         .then((response) => {
               // response.body.pipeTo(fileStream)
@@ -239,11 +243,14 @@ class Main extends Component {
         });
   }
 
-  getQuery(){
-      this.setState({app_state : 'Запрос отправлен'});
-      let params = this.makeParamsForQuery();
+  getQuery(pre_fill_params = undefined){
+      this.setState({app_state : 'Запрос отправлен', loading: true});
+      let params = pre_fill_params
+      if (pre_fill_params === undefined) {
+          params = this.makeParamsForQuery();
+      }
 
-      this.setState({ticked_with_file : this.state.is_file})
+      this.setState({ticked_with_file : this.state.is_file || pre_fill_params !== undefined})
       axios.get(
           ''.concat(address_maker('/api/get')), {
               params: params,
@@ -277,7 +284,7 @@ class Main extends Component {
         console.log(this.state.dateToLoadTable)
         if (this.state.dateToLoadTable === '') {
             console.log(this.state.dateToLoadTable)
-            this.setState({ dateToLoadTable : this.props.ask_dict['upd_date'].suggestions[0].value[0]})
+            this.setState({ dateToLoadTable : this.props.ask_dict['upd_date'].suggestions[0].value})
         }
        const backTables = [
           {name: 'Компания', value: 'company'},
@@ -332,24 +339,11 @@ class Main extends Component {
   }
 
   loadSingleTable() {
-      axios(
-          ''.concat(address_maker('/api/get/single/')), {
-          params: {
+      this.getQuery({
               tables: this.state.tableToLoad,
               filter: `upd_date${spase}eq${spase}${this.state.dateToLoadTable}${spase}`,
               file: 'true',
-          },
-          method: 'GET',
-          responseType: 'blob', // important
-          timeout: 60 * 60 * 1000
-      }).then((response) => {
-          const url = window.URL.createObjectURL(new Blob([response.data]));
-          const link = document.createElement('a');
-          link.href = url;
-          link.setAttribute('download', 'data.csv');
-          document.body.appendChild(link);
-          link.click();
-      })
+          })
   }
 
   render() {
@@ -376,7 +370,7 @@ class Main extends Component {
                   sizeUnit="px"
                   size={12}
                   color={'#123abc'}
-                  loading={this.state.ticket_id !== undefined}
+                  loading={this.state.loading}
                 />
             </div>
             <p/>
