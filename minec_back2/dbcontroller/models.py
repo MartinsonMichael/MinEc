@@ -15,7 +15,6 @@ class TicketTable(Base):
     __tablename__ = 'tickets'
     ticket_id = sqla.Column('ticket_id', sqla.String(30), primary_key=True)
     status = sqla.Column('status', sqla.String(30))
-    file_name = sqla.Column('file_name', sqla.String(50))
     file_path = sqla.Column('file_path', sqla.String(150))
     query_options = sqla.Column('query_options', sqla.Text)
 

@@ -8,10 +8,14 @@ import TableCell from '@material-ui/core/TableCell';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 
+
 import { FilterController } from './filters';
 import { AgregatorContorll } from './agregators';
 import { GroupbyContorll } from './groupper';
+import {ClipLoader} from "react-spinners";
 
+
+const streamSaver = window.streamSaver
 
 // const addr = '127.0.0.1:8000';
 const addr = '84.201.147.95';
@@ -20,8 +24,10 @@ const addr = '84.201.147.95';
 
 const spase = '#';
 
+const CHECK_TIMEOUT = 500;
+
 function address_maker(line) {
-    const address = `http://84.201.147.95:${line}`
+    const address = `http://${addr}${line}`
     console.log(`send request to address: ${address}`)
     return address
 }
@@ -38,12 +44,21 @@ class Main extends Component {
 
           showLoadTable: false,
           tableToLoad: 'Company',
-          dateToLoadTable: ''//String(this.props.ask_dict.upd_date.suggestions[0].value),
+          dateToLoadTable: '',
+
+          ticket_id: undefined,
+          ticked_with_file: undefined,
+          timer_Id: undefined,
       };
 
       this.onFileLoadSelect = this.onFileLoadSelect.bind(this);
       this.renderExtraFields = this.renderExtraFields.bind(this);
       this.loadSingleTable = this.loadSingleTable.bind(this);
+      this.onTicketRecieved = this.onTicketRecieved.bind(this);
+      this.ticketChecker = this.ticketChecker.bind(this);
+      this.contentLoader = this.contentLoader.bind(this);
+      this.fileLoader = this.fileLoader.bind(this);
+      this.onLoadQuery = this.onLoadQuery.bind(this);
   }
 
   handleChildChange = (index, data) => {
@@ -53,16 +68,10 @@ class Main extends Component {
   };
 
   onLoadQuery(response){
-    console.log(response);
     this.setState({
         table_human_header : JSON.parse(response.data.table_human_header),
         table_body : JSON.parse(response.data.table_body),
-        app_state: 'Запрос получен. Ожидание нового запроса'
     });
-
-    if (this.state.table_error.length > 0){
-        this.setState({app_state : 'Запрос завершен с ошибками'})
-    }
   }
 
   makeParamsForQuery(){
@@ -135,37 +144,115 @@ class Main extends Component {
         'Для получения информации о поле и формате данных нажмите на "?" выбрав поле в списке фильтров.')
   }
 
+  onTicketRecieved(response) {
+      console.log(response.data.ticket)
+      const timerId = setTimeout(
+          this.ticketChecker,
+          CHECK_TIMEOUT * (this.state.is_file ? 60 : 20),
+          response.data.ticket
+      )
+      this.setState({ticket_id: response.data.ticket, timerId: timerId})
+  }
+
+  ticketChecker(ticket_id) {
+      console.log('request ticket status')
+      axios.get(
+          ''.concat(address_maker('/api/ticket_status')), {
+              params: {ticket_id: ticket_id},
+              timeout: 10 * 1000,
+          })
+          .then(response => {
+              const ticket_obj = response.data
+              this.setState({app_state: ticket_obj.ticket_status})
+              if (ticket_obj.ticket_status === 'ready') {
+                  this.setState({app_state: 'Готово. Загрузка таблизы...'})
+                  if (!this.state.is_file) {
+                      this.contentLoader()
+                  } else {
+                      this.fileLoader()
+                  }
+                  this.setState({ticket_id: undefined})
+              } else {
+                  if (ticket_obj.ticket_status.slice(0, 5) !== 'error') {
+                      setTimeout(this.ticketChecker, CHECK_TIMEOUT, ticket_id)
+                  } else{
+                      this.setState({ticket_id: undefined})
+                  }
+              }
+          })
+          .catch(error => {
+              setTimeout(this.ticketChecker, CHECK_TIMEOUT, ticket_id)
+          });
+  }
+
+  contentLoader() {
+      axios.get(
+          ''.concat(address_maker('/api/content')), {
+              params: {ticket_id: this.state.ticket_id},
+              timeout: 10 * 1000,
+          })
+          .then(this.onLoadQuery)
+          .catch(function (error) {
+              console.log(error);
+          });
+  }
+
+  fileLoader(ticket_id) {
+        // const fileStream = streamSaver.createWriteStream('data.csv', {
+        //     size: 22, // (optional) Will show progress
+        //     writableStrategy: undefined, // (optional)
+        //     readableStrategy: undefined  // (optional)
+        //   })
+
+        console.log('start file load')
+
+        axios(
+              ''.concat(address_maker('/api/content')), {
+              params: {ticket_id: ticket_id},
+              timeout: 100 * 1000,
+              method: 'GET',
+              responseType: 'blob',
+          })
+        .catch(function (error) {
+            this.setState({ticket_id: undefined})
+              console.log(error);
+        })
+        .then((response) => {
+              // response.body.pipeTo(fileStream)
+
+                // console.log(response)
+
+              const url = window.URL.createObjectURL(new Blob([response.data]));
+               const link = document.createElement('a');
+               link.href = url;
+               link.setAttribute('download', 'data.csv'); //or any other extension
+               document.body.appendChild(link);
+               link.click();
+
+
+          // const url = window.URL.createObjectURL(new Blob([response.data]));
+          // const link = document.createElement('a');
+          // link.href = response.data.file;
+          // link.setAttribute('download', 'data.csv');
+          // document.body.appendChild(link);
+          // link.click();
+        });
+  }
+
   getQuery(){
       this.setState({app_state : 'Запрос отправлен'});
       let params = this.makeParamsForQuery();
 
-      if (!this.state.is_file) {
-          axios.get(
-              ''.concat(address_maker('/api/get')), {
-                  params: params,
-                  timeout: 60 * 60 * 1000
-              })
-              .then((res) => this.onLoadQuery(res))
-              .catch(function (error) {
-                  console.log(error);
-              });
-      }
-      else{
-          axios(
-              ''.concat(address_maker('/api/get/file/')), {
+      this.setState({ticked_with_file : this.state.is_file})
+      axios.get(
+          ''.concat(address_maker('/api/get')), {
               params: params,
-              method: 'GET',
-              responseType: 'blob', // important
               timeout: 60 * 60 * 1000
-          }).then((response) => {
-          const url = window.URL.createObjectURL(new Blob([response.data]));
-          const link = document.createElement('a');
-          link.href = url;
-          link.setAttribute('download', 'data.csv');
-          document.body.appendChild(link);
-          link.click();
-        });
-      }
+          })
+          .then(this.onTicketRecieved)
+          .catch(function (error) {
+              console.log(error);
+          });
   }
 
 
@@ -269,7 +356,7 @@ class Main extends Component {
     return (
         <div className="Main">
             <button onClick={() => this.showInfo()}>Справка</button>
-            <button onClick={() => this.get_update_date()}>Показать даты обновлений</button>
+            {/*<button onClick={() => this.get_update_date()}>Показать даты обновлений</button>*/}
             <p/>
 
 
@@ -280,9 +367,18 @@ class Main extends Component {
                 { this.renderLoadTableBlock() }
             </div>
 
-            <label>
-                {this.state.app_state}
-            </label>
+            <div style={{display: 'flex'}}>
+                <label>
+                    {this.state.app_state}
+                </label>
+                <ClipLoader
+                  // css={override}
+                  sizeUnit="px"
+                  size={12}
+                  color={'#123abc'}
+                  loading={this.state.ticket_id !== undefined}
+                />
+            </div>
             <p/>
             <label>
             <input
@@ -474,7 +570,7 @@ class App extends Component {
 
     componentWillMount() {
         axios.get(
-            ''.concat(address_maker('/api/get_ask_dict')), {
+            ''.concat(address_maker('/api/ask_dict')), {
           })
           .then((res) => this.on_ASK_DICT_load(res))
           .catch(function (error) {

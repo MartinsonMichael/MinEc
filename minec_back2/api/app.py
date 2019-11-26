@@ -1,3 +1,4 @@
+import mimetypes
 from datetime import datetime
 import json
 import csv
@@ -5,6 +6,7 @@ import os
 import time
 from typing import Tuple, Any, Optional
 from multiprocessing import Process
+from wsgiref.util import FileWrapper
 
 from django.http import HttpResponse, StreamingHttpResponse
 from django.utils.encoding import smart_str
@@ -65,7 +67,6 @@ def get_ticket(ticket_id):
                 .query(
                      TicketTable.ticket_id,
                      TicketTable.status,
-                     TicketTable.file_name,
                      TicketTable.file_path,
                      TicketTable.query_options
                 )
@@ -73,7 +74,7 @@ def get_ticket(ticket_id):
                 .first()
         )
 
-    ticket = {k: v for k, v in zip(['ticket_id', 'status', 'file_name', 'file_path', 'query_options'], ticket)}
+    ticket = {k: v for k, v in zip(['ticket_id', 'status', 'file_path', 'query_options'], ticket)}
     print(ticket)
     return ticket
 
@@ -109,7 +110,6 @@ def try_to_update_ticket_status(*args, **kwargs):
 def set_ticket_status(
         ticket_id: str,
         status: Optional[str] = None,
-        file_name: Optional[str] = None,
         file_path: Optional[str] = None
 ):
     with session_scope() as session:
@@ -122,8 +122,6 @@ def set_ticket_status(
             ticket_obj.status = status
         if file_path is not None:
             ticket_obj.file_path = file_path
-        if file_name is not None:
-            ticket_obj.file_name = file_name
 
 
 def perform_api(request):
@@ -186,19 +184,19 @@ def write_as_csv_file(query, header, ticket_id):
         writer.writerow(header)
         for line in query:
             writer.writerow([stringifier(x) for x in line])
-    try_to_update_ticket_status(ticket_id, file_path=file_path, file_name=file_name)
+    try_to_update_ticket_status(ticket_id, file_path=file_path)
 
 
 def get_ticket_content(request):
     ticket_id = dict(request.GET)['ticket_id'][0]
     ticket = get_ticket(ticket_id)
     if 'file' in json.loads(ticket['query_options']).keys():
-        return send_as_file(ticket['file_path'], ticket['file_name'])
+        return send_as_file(ticket['file_path'])
     else:
-        return send_as_content(ticket['file_path'], ticket['file_name'])
+        return send_as_content(ticket['file_path'])
 
 
-def send_as_content(file_path, file_name):
+def send_as_content(file_path):
     response = get_template_HTTP_RESPONSE()
 
     with open(file_path, 'r') as csv_file:
@@ -215,29 +213,16 @@ def send_as_content(file_path, file_name):
     return response
 
 
-def send_as_file(file_path, file_name):
-    response = HttpResponse(content_type='application/force-download')
+def send_as_file(file_path):
+    file_name = os.path.basename(file_path)
+    chunk_size = 8192
+    response = StreamingHttpResponse(
+        FileWrapper(open(file_path, 'rb'), chunk_size),
+        content_type=mimetypes.guess_type(file_path)[0]
+        # content_type="text/csv",
+    )
+    response['Content-Length'] = os.path.getsize(file_path)
+    response['Content-Disposition'] = "attachment; filename=%s" % file_name
     response["Access-Control-Allow-Origin"] = '*'
-    response.content = json.dumps({
-        'file': f'http://localhost/{file_path}'
-    })
-    response['Content-Disposition'] = f'attachment; filename={smart_str(file_name)}'
-    response['X-Sendfile'] = smart_str(file_path)
-    # It's usually a good idea to set the 'Content-Length' header too.
-    # You can also set any other required headers: Cache-Control, etc.
-    return response
 
-    # response = StreamingHttpResponse(
-    #     [
-    #         ','.join(header) + '\n',
-    #         *list(map(
-    #             lambda line: ','.join([stringifier(item) for item in line]) + '\n',
-    #             query
-    #         ))
-    #     ],
-    #     content_type="text/csv"
-    # )
-    # response["Access-Control-Allow-Origin"] = '*'
-    # response['Content-Disposition'] = f'attachment; filename=data.csv'
-    #
-    # return response
+    return response
