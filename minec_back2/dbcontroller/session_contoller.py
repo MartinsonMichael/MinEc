@@ -2,7 +2,10 @@ from decorator import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-psycorg_connect_string = 'postgresql://michael:123@db/minec_base_3'
+# prod
+# psycorg_connect_string = 'postgresql://michael:123@db/minec_base_3'
+# test
+psycorg_connect_string = 'postgresql://michael:123@localhost/minec_base_3'
 
 engine = create_engine(psycorg_connect_string)
 Session = sessionmaker(bind=engine, autoflush=True, autocommit=False)

@@ -13,7 +13,7 @@ from django.utils.encoding import smart_str
 from sqlalchemy_utils import Choice
 
 from api.q_performing import get_query
-from dbcontroller.model_support import create_AskDict
+from dbcontroller.model_support import create_AskDict, serializer
 from dbcontroller.models import TicketTable
 from dbcontroller.session_contoller import session_scope, sub_session_scope
 
@@ -158,13 +158,6 @@ def __sub_perform_api(request, ticket: str):
         return
 
     set_ticket_status(ticket, 'ready')
-
-
-def serializer(x):
-    if isinstance(x, datetime):
-        return str(x.day) + '.' + str(x.month) + '.' + str(x.year)
-    if isinstance(x, Choice):
-        return x.code
 
 
 def stringifier(x):

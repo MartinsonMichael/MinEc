@@ -1,7 +1,8 @@
+from datetime import datetime
 from collections import defaultdict
 from typing import Dict, List, Any, Tuple
 from sqlalchemy import Column, String, Boolean, Date, Integer, Float
-from sqlalchemy_utils.types.choice import ChoiceType
+from sqlalchemy_utils.types.choice import ChoiceType, Choice
 from sqlalchemy import func as sqla_func
 
 from dbcontroller.model_constants import \
@@ -81,11 +82,26 @@ def get_signs_for_column(column: Column) -> List[Dict[str, str]]:
          ]
 
 
+def serializer(x):
+    if isinstance(x, datetime):
+        return str(x.day) + '.' + str(x.month) + '.' + str(x.year)
+    if isinstance(x, Choice):
+        return x.code
+    return x
+
+
 def get_suggestions_for_column(column: Column) -> List[Dict[str, str]]:
     if column.name == 'upd_date':
-        return [
-            {'text': value, 'value': value} for value in get_upd_date_list()
+
+        # FIXME
+        print(get_upd_date_list())
+        def s(x):
+            return str(x.day) + '.' + str(x.month) + '.' + str(x.year)
+        upd_date_suggestions = [
+            {'text': s(value[0]), 'value': s(value[0])} for value in get_upd_date_list()
         ]
+        print(f'upd_date_suggestions : {upd_date_suggestions}')
+        return upd_date_suggestions
     if not isinstance(column.type, ChoiceType):
         return []
     return [
