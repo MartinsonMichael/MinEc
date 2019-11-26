@@ -128,6 +128,10 @@ def perform_api(request):
     options = dict(request.GET)
     ticket_id = create_ticket(options)
 
+    if not os.path.exists(FILE_STORAGE):
+        os.makedirs(FILE_STORAGE)
+
+
     Process(target=__sub_perform_api, args=(request, ticket_id)).start()
 
     # __sub_perform_api(request, ticket_id)
@@ -139,45 +143,22 @@ def perform_api(request):
     return response
 
 
-def __sub_perform_api(request, ticket: str):
+def __sub_perform_api(request, ticket_id: str):
     options = dict(request.GET)
-
-    try_to_update_ticket_status(ticket, 'start perform query')
-
-    try:
-        query, human_header = get_query(options)
-    except:
-        try_to_update_ticket_status(ticket, 'error while performing query')
-        return
-
-    try_to_update_ticket_status(ticket, 'start write to file')
-    try:
-        write_as_csv_file(query, human_header, ticket)
-    except:
-        try_to_update_ticket_status(ticket, 'error while wring to file')
-        return
-
-    set_ticket_status(ticket, 'ready')
-
-
-def stringifier(x):
-    if isinstance(x, Choice):
-        return str(x.code)
-    return str(x)
-
-
-def write_as_csv_file(query, header, ticket_id):
-    if not os.path.exists(FILE_STORAGE):
-        os.makedirs(FILE_STORAGE)
 
     file_name = f'data_{ticket_id}.csv'
     file_path = os.path.join(FILE_STORAGE, file_name)
-    with open(file_path, 'w+') as csv_file:
-        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(header)
-        for line in query:
-            writer.writerow([stringifier(x) for x in line])
-    try_to_update_ticket_status(ticket_id, file_path=file_path)
+
+    try_to_update_ticket_status(ticket_id, 'start perform query')
+
+    try:
+        get_query(options, ticket_id, file_path)
+        try_to_update_ticket_status(ticket_id, file_path=file_path)
+    except:
+        try_to_update_ticket_status(ticket_id, 'error while performing query')
+        return
+
+    set_ticket_status(ticket_id, 'ready')
 
 
 def get_ticket_content(request):

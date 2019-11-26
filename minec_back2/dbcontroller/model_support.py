@@ -94,13 +94,13 @@ def get_suggestions_for_column(column: Column) -> List[Dict[str, str]]:
     if column.name == 'upd_date':
 
         # FIXME
-        print(get_upd_date_list())
+        # print(get_upd_date_list())
         def s(x):
             return str(x.day) + '.' + str(x.month) + '.' + str(x.year)
         upd_date_suggestions = [
             {'text': s(value[0]), 'value': s(value[0])} for value in get_upd_date_list()
         ]
-        print(f'upd_date_suggestions : {upd_date_suggestions}')
+        # print(f'upd_date_suggestions : {upd_date_suggestions}')
         return upd_date_suggestions
     if not isinstance(column.type, ChoiceType):
         return []

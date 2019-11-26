@@ -149,7 +149,7 @@ class Main extends Component {
       console.log(response.data.ticket)
       const timerId = setTimeout(
           this.ticketChecker,
-          CHECK_TIMEOUT * (this.state.is_file ? 60 : 20),
+          CHECK_TIMEOUT * (this.state.ticked_with_file ? 60 : 20),
           response.data.ticket
       )
       this.setState({ticket_id: response.data.ticket, timerId: timerId})

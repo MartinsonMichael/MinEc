@@ -1,3 +1,4 @@
+import csv
 import datetime
 import itertools
 from typing import Dict, List, Any, Tuple, Type, Set, Union
@@ -7,7 +8,7 @@ from dbcontroller.model_support import \
     create_AskDict, \
     COLUMN_MAPPER, \
     get_human_headers, \
-    __create_sqla_aggregation_expression
+    __create_sqla_aggregation_expression, serializer
 from dbcontroller.models import USED_TABLES, USED_TABLES_NAME
 from dbcontroller.session_contoller import session_scope
 
@@ -242,11 +243,13 @@ def make_filter(text_filter: Dict[str, Any]):
     return sqla.and_(*buf)
 
 
-def make_query(
-        text_query: ParsedQuery,
-        column_list: List[Dict[str, Any]],
-        options_dict: Dict[str, List[str]]
-):
+def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str):
+    text_query = extract_params(options_dict)
+    print(f'text_query: {text_query}')
+
+    tables = get_tables_set(options_dict)
+    column_list = column_determiner(text_query, list(tables))
+
     with session_scope() as session:
         query = session.query(*[item['column_obj'] for item in column_list])
 
@@ -265,17 +268,13 @@ def make_query(
         # FIXME limit for debugging
         if 'file' not in options_dict.keys():
             query = query.limit(200)
-        return query.all()
 
+        print('start to srite file')
+        header = get_human_headers(column_list, text_query[AGGREGATE_KEY])
+        with open(file_path, 'w+') as csv_file:
+            writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(header)
+            for line in query:
+                writer.writerow([serializer(x) for x in line])
 
-def get_query(options_dict: Dict[str, List[str]]) -> Tuple[List[Any], List[str]]:
-    text_query = extract_params(options_dict)
-    print(f'text_query: {text_query}')
-
-    tables = get_tables_set(options_dict)
-    column_list = column_determiner(text_query, list(tables))
-
-    return (
-        make_query(text_query, column_list, options_dict),
-        get_human_headers(column_list, text_query[AGGREGATE_KEY])
-    )
+        print('write seccessfully!')
