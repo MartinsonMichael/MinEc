@@ -89,13 +89,13 @@ def get_ticket_status(request):
 
 def create_ticket(options: Any) -> str:
     ticket = str(int(time.mktime(datetime.now().timetuple())))
-    with session_scope() as session:
-        session.add(TicketTable(
-            ticket_id=ticket,
-            status='created',
-            file_path='',
-            query_options=json.dumps(options),
-        ))
+    # with session_scope() as session:
+    #     session.add(TicketTable(
+    #         ticket_id=ticket,
+    #         status='created',
+    #         file_path='',
+    #         query_options=json.dumps(options),
+    #     ))
     return ticket
 
 

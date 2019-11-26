@@ -267,14 +267,19 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
 
         # FIXME limit for debugging
         if 'file' not in options_dict.keys():
-            query = query.limit(200)
+            query = query.limit(1500)
 
         print('start to srite file')
         header = get_human_headers(column_list, text_query[AGGREGATE_KEY])
         with open(file_path, 'w+') as csv_file:
             writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(header)
-            for line in query:
-                writer.writerow([serializer(x) for x in line])
+
+        MAX_LIMIT = 50 * 10**3
+        for i in range(0, MAX_LIMIT * 5 * 10**3, MAX_LIMIT):
+            with open(file_path, 'a') as csv_file:
+                writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                for line in query.limit(MAX_LIMIT).offset(i):
+                    writer.writerow([serializer(x) for x in line])
 
         print('write seccessfully!')

@@ -25,7 +25,7 @@ const addr = '84.201.147.95';
 
 const spase = '#';
 
-const CHECK_TIMEOUT = 500;
+const CHECK_TIMEOUT = 5000;
 
 function address_maker(line) {
     const address = `http://${addr}${line}`
@@ -150,7 +150,7 @@ class Main extends Component {
       console.log(response.data.ticket)
       const timerId = setTimeout(
           this.ticketChecker,
-          CHECK_TIMEOUT * (this.state.ticked_with_file ? 3 : 3),
+          CHECK_TIMEOUT,
           response.data.ticket
       )
       this.setState({ticket_id: response.data.ticket, timerId: timerId})
