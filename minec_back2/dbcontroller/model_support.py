@@ -194,8 +194,6 @@ def get_human_headers(column_list: List[Dict[str, Any]], aggregation: List[Dict[
     aggregate_column_func = [x['column_aggregate_func'] for x in aggregation]
     cur_index = 0
     human_headers = []
-    print(column_list)
-    print(aggregation)
     for index, column_dict in enumerate(column_list):
         machine_name = column_dict['column_name']
         human_headers.append('')

@@ -119,11 +119,6 @@ def perform_api(request):
     options = dict(request.GET)
     ticket_id = create_ticket(options)
 
-    print('start performing process')
-    prc = Process(target=__sub_perform_api, args=(request, ticket_id))
-
-    # __sub_perform_api(request, ticket_id)
-
     print('start to create ticket_id response')
     response = get_template_HTTP_RESPONSE()
     response.content = json.dumps({
@@ -132,6 +127,9 @@ def perform_api(request):
     try:
         return response
     finally:
+        print('start performing process')
+        prc = Process(target=__sub_perform_api, args=(request, ticket_id))
+        time.sleep(3.0)
         prc.start()
 
 
