@@ -119,10 +119,12 @@ def perform_api(request):
     options = dict(request.GET)
     ticket_id = create_ticket(options)
 
+    print('start performing process')
     Process(target=__sub_perform_api, args=(request, ticket_id)).start()
 
     # __sub_perform_api(request, ticket_id)
 
+    print('start to create ticket_id response')
     response = get_template_HTTP_RESPONSE()
     response.content = json.dumps({
         'ticket': ticket_id
@@ -131,6 +133,7 @@ def perform_api(request):
 
 
 def __sub_perform_api(request, ticket_id: str):
+    time.sleep(3.0)
     options = dict(request.GET)
 
     file_name = f'data_{ticket_id}.csv'

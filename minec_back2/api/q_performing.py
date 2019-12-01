@@ -269,7 +269,7 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
         if 'file' not in options_dict.keys():
             query = query.limit(1500)
 
-        print('start to srite file')
+        print('start to write file')
         header = get_human_headers(column_list, text_query[AGGREGATE_KEY])
         try:
             with open(file_path, 'w+') as csv_file:
