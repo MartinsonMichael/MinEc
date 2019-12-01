@@ -123,7 +123,7 @@ def column_determiner(text_query: ParsedQuery, tables: List[str]) -> List[Dict[s
     for item in text_query[FILTER_KEY]:
         used_tables.append(ASK_DICT[item['column_name']]['table_name'])
     used_tables = set(used_tables)
-    print(f'column_determiner -> used_tables: {used_tables}')
+    # print(f'column_determiner -> used_tables: {used_tables}')
 
     if len(used_tables) == 0:
         used_tables.add('company')
@@ -151,13 +151,13 @@ def column_determiner(text_query: ParsedQuery, tables: List[str]) -> List[Dict[s
             'column_name': column_name,
             'column_obj': COLUMN_MAPPER[column_name],
         })
-    print(f'column determiner -> columns : {columns}')
+    # print(f'column determiner -> columns : {columns}')
     return sort_columns(columns)
 
 
 def sort_columns(column_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     def key_extractor(x):
-        print(x)
+        # print(x)
         if x['column_name'].startswith('inn') or x['column_name'].startswith('upd_date'):
             return 0, x['column_name']
         return len(x['column_name']), x['column_name']
@@ -197,10 +197,10 @@ def get_tables_set(options_dict: Dict[str, List[str]], only_type: Set[str] = Non
         if column_name != 'inn' and column_name != 'upd_date':
             tables.add(ASK_DICT[column_name]['table_name'])
 
-    print(f'for only types: {only_type}')
+    # print(f'for only types: {only_type}')
     if len(tables) == 0:
         tables.add('company')
-    print(f'we will use tables: {tables}')
+    # print(f'we will use tables: {tables}')
     return tables
 
 
@@ -270,7 +270,11 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
             query = query.limit(1500)
 
         print('start to write file')
-        header = get_human_headers(column_list, text_query[AGGREGATE_KEY])
+        try:
+            header = get_human_headers(column_list, text_query[AGGREGATE_KEY])
+        except:
+            print('error while getting headers :(')
+
         try:
             with open(file_path, 'w+') as csv_file:
                 writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -286,4 +290,4 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
                 for line in query.limit(MAX_LIMIT).offset(i):
                     writer.writerow([serializer(x) for x in line])
 
-        print('write seccessfully!')
+        print('write successfully!')

@@ -145,7 +145,6 @@ def __sub_perform_api(request, ticket_id: str):
 
     try:
         get_query(options, ticket_id, file_path)
-        # try_to_update_ticket_status(ticket_id)
     except:
         try_to_update_ticket_status(ticket_id, 'error while performing query')
         return
