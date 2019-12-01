@@ -120,7 +120,7 @@ def perform_api(request):
     ticket_id = create_ticket(options)
 
     print('start performing process')
-    Process(target=__sub_perform_api, args=(request, ticket_id)).start()
+    # Process(target=__sub_perform_api, args=(request, ticket_id)).start()
 
     # __sub_perform_api(request, ticket_id)
 
