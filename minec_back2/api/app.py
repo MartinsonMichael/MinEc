@@ -115,22 +115,35 @@ def try_to_update_ticket_status(ticket_id: str, status: str):
         print(f'file path: {file_path}')
 
 
+class ResponseThen(HttpResponse):
+    def __init__(self, data, query_performer, **kwargs):
+        super().__init__(data, **kwargs)
+        self.query_performer = query_performer
+
+    def close(self):
+        super().close()
+        self.query_performer()
+
+
 def perform_api(request):
     options = dict(request.GET)
     ticket_id = create_ticket(options)
 
+    def f():
+        __sub_perform_api(request, ticket_id)
+
     print('start to create ticket_id response')
-    response = get_template_HTTP_RESPONSE()
-    response.content = json.dumps({
-        'ticket': ticket_id
-    })
-    try:
-        return response
-    finally:
-        print('start performing process')
-        # prc = Process(target=__sub_perform_api, args=(request, ticket_id))
-        # time.sleep(3.0)
-        # prc.start()
+    response = ResponseThen(json.dumps({'ticket': ticket_id}), f)
+    response["Access-Control-Allow-Origin"] = '*'
+    response.content = json.dumps({'ticket': ticket_id})
+    # try:
+    #     return response
+    # finally:
+    #     print('start performing process')
+    #     # prc = Process(target=__sub_perform_api, args=(request, ticket_id))
+    #     # time.sleep(3.0)
+    #     # prc.start()
+    return response
 
 
 def __sub_perform_api(request, ticket_id: str):
