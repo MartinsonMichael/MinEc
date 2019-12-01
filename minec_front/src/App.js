@@ -164,6 +164,8 @@ class Main extends Component {
               timeout: 10 * 1000,
           })
           .then(response => {
+              console.log('status response:')
+              console.log(response)
               const ticket_obj = response.data
               this.setState({app_state: ticket_obj.ticket_status})
               if (ticket_obj.ticket_status === 'ready') {

@@ -122,7 +122,7 @@ class ResponseThen(HttpResponse):
 
     def close(self):
         super().close()
-        self.query_performer()
+        Process(target=self.query_performer()).start()
 
 
 def perform_api(request):
