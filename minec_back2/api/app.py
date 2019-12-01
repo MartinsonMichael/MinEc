@@ -128,9 +128,9 @@ def perform_api(request):
         return response
     finally:
         print('start performing process')
-        prc = Process(target=__sub_perform_api, args=(request, ticket_id))
-        time.sleep(3.0)
-        prc.start()
+        # prc = Process(target=__sub_perform_api, args=(request, ticket_id))
+        # time.sleep(3.0)
+        # prc.start()
 
 
 def __sub_perform_api(request, ticket_id: str):
