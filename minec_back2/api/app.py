@@ -120,7 +120,7 @@ def perform_api(request):
     ticket_id = create_ticket(options)
 
     print('start performing process')
-    # Process(target=__sub_perform_api, args=(request, ticket_id)).start()
+    Process(target=__sub_perform_api, args=(request, ticket_id)).start()
 
     # __sub_perform_api(request, ticket_id)
 
@@ -133,13 +133,13 @@ def perform_api(request):
 
 
 def __sub_perform_api(request, ticket_id: str):
+    try_to_update_ticket_status(ticket_id, 'start perform query')
     time.sleep(3.0)
     options = dict(request.GET)
 
     file_name = f'data_{ticket_id}.csv'
     file_path = os.path.join(FILE_STORAGE, file_name)
 
-    try_to_update_ticket_status(ticket_id, 'start perform query')
     try:
         get_query(options, ticket_id, file_path)
         # try_to_update_ticket_status(ticket_id)
