@@ -19,6 +19,8 @@ from dbcontroller.session_contoller import session_scope, sub_session_scope
 
 
 FILE_STORAGE = os.path.join('/', 'home', 'michael', 'sent_files')
+if not os.path.exists(FILE_STORAGE):
+    os.makedirs(FILE_STORAGE)
 
 
 def get_template_HTTP_RESPONSE():
@@ -99,53 +101,23 @@ def create_ticket(options: Any) -> str:
     return ticket
 
 
-def try_to_update_ticket_status(ticket_id: str,status: str):
+def try_to_update_ticket_status(ticket_id: str, status: str):
     file_name = f'status_{ticket_id}.csv'
     file_path = os.path.join(FILE_STORAGE, file_name)
     if os.path.exists(file_path):
         os.remove(file_path)
 
-    with open(file_path, 'w+') as file:
-        file.write(status)
-    # times = 0
-    # while True:
-    #     try:
-    #         set_ticket_status(*args, **kwargs)
-    #         print('status was successfully updated')
-    #         break
-    #     except:
-    #         print('status update failed')
-    #         times += 1
-    #         time.sleep(5)
-    #
-    #     if times > 10:
-    #         break
-
-
-# def set_ticket_status(
-#         ticket_id: str,
-#         status: Optional[str] = None,
-#         file_path: Optional[str] = None
-# ):
-#     with session_scope() as session:
-#         ticket_obj = session.query(TicketTable).filter(TicketTable.ticket_id == ticket_id).first()
-#
-#         if ticket_obj is None:
-#             raise ValueError('fuck this shit')
-#
-#         if status is not None:
-#             ticket_obj.status = status
-#         if file_path is not None:
-#             ticket_obj.file_path = file_path
+    try:
+        with open(file_path, 'w+') as file:
+            file.write(status)
+    except:
+        print('can\'t write status to file')
+        print(f'file path: {file_path}')
 
 
 def perform_api(request):
     options = dict(request.GET)
     ticket_id = create_ticket(options)
-
-    if not os.path.exists(FILE_STORAGE):
-        os.makedirs(FILE_STORAGE)
-
 
     Process(target=__sub_perform_api, args=(request, ticket_id)).start()
 
