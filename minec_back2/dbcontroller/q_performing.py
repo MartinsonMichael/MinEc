@@ -271,7 +271,8 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
             query = query.group_by(*[grouper['column_obj'] for grouper in text_query[GROUP_KEY]])
         print('setup grouppers')
 
-        query_cnt = query.count()
+        # query_cnt = query.count()
+        query_cnt = 10**9
 
         # FIXME limit for debugging
         if 'file' not in options_dict.keys():
