@@ -60,14 +60,14 @@ services:
     volumes:
       - /home/michael/sent_files/:/home/michael/sent_files/
 
-  celery-beat:
-    container_name: celery_beat
-    build:
-      context: ./minec_back2/.
-      dockerfile: celery-beat-Dockerfile
-    depends_on:
-      - backend
-      - rabbit
-    volumes:
-      - ./data/:/data/
+        #  celery-beat:
+        #container_name: celery_beat
+        #build:
+        #context: ./minec_back2/.
+        #dockerfile: celery-beat-Dockerfile
+        #depends_on:
+        #- backend
+        #- rabbit
+        #volumes:
+        #- ./data/:/data/
 
