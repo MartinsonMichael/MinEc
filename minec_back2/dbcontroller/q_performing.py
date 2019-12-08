@@ -152,14 +152,16 @@ def column_determiner(text_query: ParsedQuery, tables: List[str]) -> List[Dict[s
                 continue
             else:
                 inn_used_flag['inn'] = True
-                column_name = 'inn_' + used_tables[0]
+                if used_tables[0] != 'company':
+                    column_name = 'inn_' + used_tables[0]
 
         if column_name.startswith('upd_date'):
             if inn_used_flag['upd_date']:
                 continue
             else:
                 inn_used_flag['upd_date'] = True
-                column_name = 'upd_date_' + used_tables[0]
+                if used_tables[0] != 'company':
+                    column_name = 'upd_date_' + used_tables[0]
 
         columns.append({
             'column_name': column_name,
