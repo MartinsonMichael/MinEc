@@ -73,6 +73,10 @@ def extract_params(options_dict: Dict[str, List[str]]) -> ParsedQuery:
         tables = list(get_tables_set(options_dict, {AGGREGATE_KEY, GROUP_KEY}))
     else:
         tables = list(get_tables_set(options_dict))
+
+    if 'tables' in options_dict.keys():
+        tables = [options_dict['tables'][0]]
+
     if len(tables) == 0:
         tables = ['company']
 
@@ -123,16 +127,22 @@ def column_determiner(text_query: ParsedQuery, tables: List[str]) -> List[Dict[s
 
     used_tables = tables
     for item in text_query[FILTER_KEY]:
+        if item['column_name'].startswith('upd_date') or item['column_name'].startswith('inn'):
+            continue
         used_tables.append(ASK_DICT[item['column_name']]['table_name'])
     used_tables = set(used_tables)
-    # print(f'column_determiner -> used_tables: {used_tables}')
+    print(f'column_determiner -> used_tables: {used_tables}')
 
     if len(used_tables) == 0:
         used_tables.add('company')
 
+    used_tables = list(used_tables)
+
     columns = []
     inn_used_flag = {'inn': False, 'upd_date': False}
     for column_name, info in ASK_DICT.items():
+
+        print(column_name)
 
         if info['table_name'] not in used_tables:
             continue
@@ -142,12 +152,14 @@ def column_determiner(text_query: ParsedQuery, tables: List[str]) -> List[Dict[s
                 continue
             else:
                 inn_used_flag['inn'] = True
+                column_name = 'inn_' + used_tables[0]
 
         if column_name.startswith('upd_date'):
             if inn_used_flag['upd_date']:
                 continue
             else:
                 inn_used_flag['upd_date'] = True
+                column_name = 'upd_date_' + used_tables[0]
 
         columns.append({
             'column_name': column_name,
@@ -175,9 +187,10 @@ def get_tables_set(options_dict: Dict[str, List[str]], only_type: Set[str] = Non
     for key, value in options_dict.items():
 
         if key == 'tables':
+            tables = set()
             for we_need_this_table in options_dict['tables']:
                 tables.add(we_need_this_table.lower())
-            continue
+            break
 
         # FIXME!!!
         flag = True
@@ -251,6 +264,7 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
 
     tables = get_tables_set(options_dict)
     column_list = column_determiner(text_query, list(tables))
+    print(column_list)
     print('made pre session jobs')
 
     with session_scope() as session:
@@ -295,18 +309,17 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
             print(f'file path: {file_path}')
 
         cur_writted = 0
-        MAX_LIMIT = 500 * 10**3
-        for i in range(0, MAX_LIMIT * 10**3, MAX_LIMIT):
-            with open(file_path, 'a') as csv_file:
-                writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                # for line in query.offset(i).limit(MAX_LIMIT):
+        MAX_LIMIT = 10**5
+        with open(file_path, 'a') as csv_file:
+            writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            for i in range(0, MAX_LIMIT * 10**3, MAX_LIMIT):
                 for line in query.slice(i, i+MAX_LIMIT).all():
                     writer.writerow([serializer(x) for x in line])
                     cur_writted += 1
                     if cur_writted >= query_cnt:
                         break
-            if cur_writted >= query_cnt:
-                break
+                if cur_writted >= query_cnt:
+                    break
 
         print(f'file path: {file_path}')
         print('write successfully!')

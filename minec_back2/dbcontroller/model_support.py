@@ -207,7 +207,3 @@ def get_human_headers(column_list: List[Dict[str, Any]], aggregation: List[Dict[
 
 def __create_sqla_aggregation_expression(aggregation: List[str]):
     return AGGREGATION_NAME_TO_FUNC[aggregation[1]](COLUMN_MAPPER[aggregation[0]])
-
-
-def create_sqla_filter_expression(filters: List[Any]) -> List[Any]:
-    pass
