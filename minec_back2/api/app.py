@@ -7,15 +7,11 @@ import time
 from typing import Tuple, Any, Optional
 from wsgiref.util import FileWrapper
 
+from celery_app.apps import __sub_perform_api
 from django.http import HttpResponse, StreamingHttpResponse
 
-from celery_app.q_performing import __sub_perform_api
 from dbcontroller.model_support import create_AskDict, serializer
-
-
-FILE_STORAGE = os.path.join('/', 'home', 'michael', 'sent_files')
-if not os.path.exists(FILE_STORAGE):
-    os.makedirs(FILE_STORAGE)
+from dbcontroller.q_performing import FILE_STORAGE
 
 
 def get_template_HTTP_RESPONSE():
