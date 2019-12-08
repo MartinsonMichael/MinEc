@@ -41,3 +41,21 @@ services:
       - "5432:5432"
     volumes: 
       - ./postgres_data:/var/lib/postgresql/data
+
+  rabbit:
+    image: rabbitmq:3-management
+    container_name: rabbit
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  celery:
+    container_name: celery
+    build:
+      context: ./minec_back2/.
+      dockerfile: celery-Dockerfile
+    depends_on:
+      - backend
+      - rabbit
+    volumes:
+      - /home/michael/sent_files/:/home/michael/sent_files/

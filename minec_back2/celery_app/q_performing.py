@@ -1,8 +1,10 @@
 import csv
 import datetime
 import itertools
+import os
 from typing import Dict, List, Any, Tuple, Type, Set, Union
 import sqlalchemy as sqla
+from celery import Celery
 
 from dbcontroller.model_support import \
     create_AskDict, \
@@ -18,6 +20,8 @@ GROUP_KEY = 'group_by'
 FILTER_KEY = 'filter'
 ASK_DICT = create_AskDict()
 ParsedQuery = Dict[str, List[Dict[str, Any]]]
+
+app = Celery('tasks', broker='pyamqp://guest@rabbit//')
 
 
 def parse_value(value, case):
@@ -243,6 +247,7 @@ def make_filter(text_filter: Dict[str, Any]):
     return sqla.and_(*buf)
 
 
+@app.task
 def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str):
     text_query = extract_params(options_dict)
     print(f'text_query: {text_query}')
@@ -287,7 +292,43 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
         for i in range(0, MAX_LIMIT * 10**3, MAX_LIMIT):
             with open(file_path, 'a') as csv_file:
                 writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                for line in query.limit(MAX_LIMIT).offset(i):
+                for line in query.offset(i).limit(MAX_LIMIT):
                     writer.writerow([serializer(x) for x in line])
 
         print('write successfully!')
+
+
+FILE_STORAGE = os.path.join('/', 'home', 'michael', 'sent_files')
+if not os.path.exists(FILE_STORAGE):
+    os.makedirs(FILE_STORAGE)
+
+
+def try_to_update_ticket_status(ticket_id: str, status: str):
+    file_name = f'status_{ticket_id}.csv'
+    file_path = os.path.join(FILE_STORAGE, file_name)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    try:
+        with open(file_path, 'w+') as file:
+            file.write(status)
+    except:
+        print('can\'t write status to file')
+        print(f'file path: {file_path}')
+
+
+@app.task
+def __sub_perform_api(options, ticket_id: str):
+    try_to_update_ticket_status(ticket_id, 'start perform query')
+    # options = dict(request.GET)
+
+    file_name = f'data_{ticket_id}.csv'
+    file_path = os.path.join(FILE_STORAGE, file_name)
+
+    try:
+        get_query(options, ticket_id, file_path)
+    except:
+        try_to_update_ticket_status(ticket_id, 'error while performing query')
+        return
+
+    try_to_update_ticket_status(ticket_id, 'ready')

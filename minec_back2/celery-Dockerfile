@@ -1,0 +1,9 @@
+FROM python:3.6
+
+RUN mkdir /celery_wd
+WORKDIR /celery_wd
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
+COPY . ./
+
+CMD celery --app=celery_app.q_performing worker --loglevel=info

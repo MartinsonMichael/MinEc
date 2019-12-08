@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+
+  rabbit:
+    container_name: rabbit
+    build:
+      context: .
+      dockerfile: rabbit_dockerfile
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+

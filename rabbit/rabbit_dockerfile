@@ -1,0 +1,15 @@
+FROM rabbitmq
+
+# Define environment variables.
+ENV RABBITMQ_USER rabbit_user
+ENV RABBITMQ_PASSWORD rabbit_pwd
+
+rabbitmqctl add_user $RABBITMQ_USER $RABBITMQ_PASSWORD 2>/dev/null ;
+rabbitmqctl set_user_tags $RABBITMQ_USER administrator ;
+rabbitmqctl set_permissions -p / $RABBITMQ_USER  ".*" ".*" ".*" ;
+
+EXPOSE 15672
+EXPOSE 5672
+
+# Define default command
+CMD ["rabbitmq-server"]

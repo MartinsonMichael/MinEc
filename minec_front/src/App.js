@@ -18,9 +18,9 @@ import {ClipLoader} from "react-spinners";
 const streamSaver = window.streamSaver
 
 
-// const addr = '127.0.0.1:8000';
-const addr = '84.201.147.95';
-// const addr = '0.0.0.0';
+// const addr = '127.0.0.1:80';
+// const addr = '84.201.147.95';
+const addr = '';
 // const addr = 'backend';
 
 const spase = '#';
@@ -28,7 +28,7 @@ const spase = '#';
 const CHECK_TIMEOUT = 5000;
 
 function address_maker(line) {
-    const address = `http://${addr}${line}`
+    const address = `${addr}${line}`
     console.log(`send request to address: ${address}`)
     return address
 }
