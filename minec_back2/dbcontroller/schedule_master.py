@@ -50,6 +50,13 @@ PAGE_TYPES = {
 }
 
 
+def any_has_updates():
+    for base_name in PAGE_TYPES.keys():
+        if has_got_update(base_name):
+            return True
+    return False
+
+
 def master_single(upd_date: datetime.date = None, steps: int = None):
     if not upd_date:
         upd_date = datetime.datetime.now().date()

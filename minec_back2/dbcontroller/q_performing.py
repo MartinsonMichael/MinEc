@@ -274,6 +274,7 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
             query = query.limit(500)
             query_cnt = min(query_cnt, 500)
 
+        print(f'query limit is {query_cnt}')
         print('start to write file')
         try:
             header = get_human_headers(column_list, text_query[AGGREGATE_KEY])
@@ -288,14 +289,18 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
             print('cant write query header to file (probably cant just write to file)')
             print(f'file path: {file_path}')
 
+        cur_writted = 0
         MAX_LIMIT = 50 * 10**3
         for i in range(0, MAX_LIMIT * 10**3, MAX_LIMIT):
-            if i > query_cnt:
-                break
             with open(file_path, 'a') as csv_file:
                 writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 for line in query.offset(i).limit(MAX_LIMIT):
                     writer.writerow([serializer(x) for x in line])
+                    cur_writted += 1
+                    if cur_writted >= query_cnt:
+                        break
+            if cur_writted >= query_cnt:
+                break
 
         print(f'file path: {file_path}')
         print('write successfully!')
