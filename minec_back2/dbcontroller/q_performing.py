@@ -295,7 +295,7 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
             print(f'file path: {file_path}')
 
         cur_writted = 0
-        MAX_LIMIT = 50 * 10**3
+        MAX_LIMIT = 500 * 10**3
         for i in range(0, MAX_LIMIT * 10**3, MAX_LIMIT):
             with open(file_path, 'a') as csv_file:
                 writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
