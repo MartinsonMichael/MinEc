@@ -6,4 +6,4 @@ COPY requirements.txt ./
 RUN pip install -r requirements.txt
 COPY . ./
 
-CMD celery --app=celery_app.apps beat --loglevel=info
+CMD celery --app=celery_app.apps worker -B --loglevel=info

@@ -67,6 +67,19 @@ def master_single(upd_date: datetime.date = None, steps: int = None):
     for base_name, description in PAGE_TYPES.items():
         _try_update_base(description, upd_date, steps)
 
+    if steps is None:
+        delete_loaded_data(upd_date)
+
+
+def delete_loaded_data(upd_date):
+    for base_name, description in PAGE_TYPES.items():
+        cur_upd_dir = os.path.join(BUFFER_DIR, str(upd_date))
+        zip_file_name = os.path.join(cur_upd_dir, description['folder_name'] + '.zip')
+        folder_name = os.path.join(cur_upd_dir, description['folder_name'])
+
+        os.remove(zip_file_name)
+        os.remove(folder_name)
+
 
 def get_updated_base_list(force=False):
     upd = []

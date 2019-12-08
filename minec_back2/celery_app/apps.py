@@ -10,11 +10,11 @@ app = Celery('tasks', broker='pyamqp://guest@rabbit//')
 
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
-    # Calls test('hello') every 10 seconds.
-    print('here')
-    sender.add_periodic_task(10.0, test.s('hello'), name='add every 10')
 
-    sender.add_periodic_task(crontab(minute=0, hour='*/3'), __remove_old_query.s(), name='add every 10')
+    sender.add_periodic_task(crontab(minute=0, hour='*/3'), __remove_old_query.s(), name='old query remover')
+
+    sender.add_periodic_task(crontab(minute=0, hour=3, day_of_week='sunday'), __updater.s(), name='update database')
+
 
 
 @app.task

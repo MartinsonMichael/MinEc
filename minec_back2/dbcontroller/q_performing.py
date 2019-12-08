@@ -299,7 +299,8 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
         for i in range(0, MAX_LIMIT * 10**3, MAX_LIMIT):
             with open(file_path, 'a') as csv_file:
                 writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                for line in query.offset(i).limit(MAX_LIMIT):
+                # for line in query.offset(i).limit(MAX_LIMIT):
+                for line in query.slice(i, i+MAX_LIMIT).all():
                     writer.writerow([serializer(x) for x in line])
                     cur_writted += 1
                     if cur_writted >= query_cnt:
