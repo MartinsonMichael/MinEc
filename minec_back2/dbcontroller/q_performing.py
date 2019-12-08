@@ -251,6 +251,7 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
 
     tables = get_tables_set(options_dict)
     column_list = column_determiner(text_query, list(tables))
+    print('made pre session jobs')
 
     with session_scope() as session:
         query = session.query(*[item['column_obj'] for item in column_list])
@@ -258,14 +259,17 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
         # for case we should join more then one table
         if len(get_tables_set(options_dict)) > 1:
             query = query.filter(get_joining_filter(options_dict))
+        print('setup join filters')
 
         # just filters
         for text_filter in text_query[FILTER_KEY]:
             query = query.filter(make_filter(text_filter))
+        print('setup filters')
 
         # perform group by
         if len(text_query[GROUP_KEY]) > 0:
             query = query.group_by(*[grouper['column_obj'] for grouper in text_query[GROUP_KEY]])
+        print('setup grouppers')
 
         query_cnt = query.count()
 

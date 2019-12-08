@@ -1,0 +1,9 @@
+FROM python:3.6
+
+RUN mkdir /celery_beat_wd
+WORKDIR /celery_beat_wd
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
+COPY . ./
+
+CMD celery --app=celery_app.apps beat --loglevel=info
