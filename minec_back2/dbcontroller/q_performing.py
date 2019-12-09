@@ -292,8 +292,8 @@ def get_query(options_dict: Dict[str, List[str]], ticket_id: str, file_path: str
 
         # FIXME limit for debugging
         if 'file' not in options_dict.keys():
-            query = query.limit(500)
-            query_cnt = min(query_cnt, 500)
+            query = query.limit(1500)
+            query_cnt = min(query_cnt, 1500)
 
         print(f'query limit is {query_cnt}')
         print('start to write file')

@@ -384,6 +384,7 @@ class Main extends Component {
                 onChange={this.onFileLoadSelect}
             />
                 Возвращать запрос файлом
+                (без этой опции будут отображаться только первые 1500 строк)
             </label>
           <div className="Controllers">
             <FilterController onNewData={this.handleChildChange} ask_dict={this.props.ask_dict}/>
