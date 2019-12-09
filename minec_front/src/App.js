@@ -172,7 +172,7 @@ class Main extends Component {
               this.setState({app_state: ticket_obj.ticket_status})
               if (ticket_obj.ticket_status === 'ready') {
                   this.setState({app_state: 'Готово'})
-                  this.setState({link_to_file: `84.201.147.95/api/content?ticket_id=${this.state.ticket_id}&file=1`})
+                  this.setState({link_to_file: `/api/content?ticket_id=${this.state.ticket_id}&file=1`})
                   if (!this.state.ticked_with_file) {
                       this.contentLoader(this.state.ticket_id)
                   } else {
