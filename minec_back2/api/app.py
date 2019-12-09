@@ -66,6 +66,22 @@ def create_ticket(options: Any) -> str:
     return ticket
 
 
+def delete_ticket_info(ticket_id: str):
+    try:
+        file_name = f'data_{ticket_id}.csv'
+        file_path = os.path.join(FILE_STORAGE, file_name)
+        os.remove(file_path)
+    except:
+        pass
+
+    try:
+        file_name = f'status_{ticket_id}.csv'
+        file_path = os.path.join(FILE_STORAGE, file_name)
+        os.remove(file_path)
+    except:
+        pass
+
+
 def perform_api(request):
     options = dict(request.GET)
     ticket_id = create_ticket(options)

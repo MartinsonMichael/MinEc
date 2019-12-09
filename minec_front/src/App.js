@@ -13,6 +13,7 @@ import { FilterController } from './filters';
 import { AgregatorContorll } from './agregators';
 import { GroupbyContorll } from './groupper';
 import {ClipLoader} from "react-spinners";
+import {Link} from "@material-ui/core";
 
 
 const streamSaver = window.streamSaver
@@ -51,6 +52,7 @@ class Main extends Component {
           ticked_with_file: undefined,
           timer_Id: undefined,
           loading: false,
+          link_to_file: undefined,
       };
 
       this.onFileLoadSelect = this.onFileLoadSelect.bind(this);
@@ -170,6 +172,7 @@ class Main extends Component {
               this.setState({app_state: ticket_obj.ticket_status})
               if (ticket_obj.ticket_status === 'ready') {
                   this.setState({app_state: 'Готово'})
+                  this.setState({link_to_file: `84.201.147.95/api/content?ticket_id=${this.state.ticket_id}&file=1`})
                   if (!this.state.ticked_with_file) {
                       this.contentLoader(this.state.ticket_id)
                   } else {
@@ -207,8 +210,8 @@ class Main extends Component {
         //     writableStrategy: undefined, // (optional)
         //     readableStrategy: undefined  // (optional)
         //   })
-
         console.log('start file load')
+
 
         axios(
               ''.concat(address_maker('/api/content')), {
@@ -247,7 +250,7 @@ class Main extends Component {
   }
 
   getQuery(pre_fill_params = undefined){
-      this.setState({app_state : 'Запрос отправлен', loading: true});
+      this.setState({app_state : 'Запрос отправлен', loading: true, link_to_file: undefined});
       let params = pre_fill_params
       if (pre_fill_params === undefined) {
           params = this.makeParamsForQuery();
@@ -368,6 +371,17 @@ class Main extends Component {
                 <label>
                     {this.state.app_state}
                 </label>
+                { this.state.link_to_file === undefined ? null :  (
+                    <a
+                        style={{cursor: 'pointer'}}
+                        href={this.state.link_to_file}
+                    >
+                        {' - Ссылка на скачивание файла'}
+                    </a>
+
+
+                    )
+                }
                 <ClipLoader
                   // css={override}
                   sizeUnit="px"
