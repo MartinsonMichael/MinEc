@@ -49,18 +49,6 @@ services:
       - "5672:5672"
       - "15672:15672"
 
-  celery:
-    container_name: celery
-    build:
-      context: ./minec_back2/.
-      dockerfile: celery-Dockerfile
-    depends_on:
-      - backend
-      - rabbit
-    volumes:
-      - /home/michael/sent_files/:/home/michael/sent_files/
-      - ./data/:/data/
-
   celery-beat:
     container_name: celery_beat
     build:
