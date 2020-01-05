@@ -2,9 +2,8 @@ import csv
 import datetime
 import itertools
 import os
-from typing import Dict, List, Any, Tuple, Type, Set, Union
+from typing import Dict, List, Any, Set
 import sqlalchemy as sqla
-from celery import Celery
 
 from dbcontroller.model_support import \
     create_AskDict, \

@@ -33,11 +33,14 @@ def parse_folder(folder_name: str, upd_date: date, parser_func: Callable, thead_
 def file_list_process_worker(files_list, folder_name, upd_date, parser_func):
     list_to_create = []
     for file in files_list:
-        processed_items = [
-            parser_func(item, inn, upd_date)
-            for item, inn in iterate_over_file(os.path.join(folder_name, file))
-        ]
-        list_to_create.extend(processed_items)
+        try:
+            processed_items = [
+                parser_func(item, inn, upd_date)
+                for item, inn in iterate_over_file(os.path.join(folder_name, file))
+            ]
+            list_to_create.extend(processed_items)
+        except:
+            print('item parse failed')
         if len(list_to_create) > MAX_SIZE_TO_CREATE:
             save_list(list_to_create)
             list_to_create = []

@@ -50,7 +50,7 @@ def __remove_old_query():
             os.remove(file_path)
 
 
-@app.task()
+@app.task
 def __updater():
     if not any_has_updates():
         print('no any updates')
