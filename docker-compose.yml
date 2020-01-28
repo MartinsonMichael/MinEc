@@ -31,6 +31,7 @@ services:
 
   db:
     image: postgres:10.1-alpine
+    restart: always
     container_name: db
     hostname: db
     environment:
