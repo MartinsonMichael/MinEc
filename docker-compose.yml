@@ -27,21 +27,9 @@ services:
       - /home/michael/sent_files:/home/michael/sent_files
     depends_on:
      - db
+    extra_hosts:
+     - 'db:???'
 
-
-  db:
-    image: postgres:10.1-alpine
-    restart: always
-    container_name: db
-    hostname: db
-    environment:
-      - POSTGRES_USER=michael
-      - POSTGRES_PASSWORD=123
-      - POSTGRES_DB=minec_base_3
-    ports:
-      - "5432:5432"
-    volumes: 
-      - ./postgres_data:/var/lib/postgresql/data
 
   rabbit:
     image: rabbitmq:3-management
