@@ -25,10 +25,6 @@ services:
     volumes:
       - ./minec_back2:/backend
       - /home/michael/sent_files:/home/michael/sent_files
-    depends_on:
-     - db
-    extra_hosts:
-     - 'db:???'
 
 
   rabbit:
